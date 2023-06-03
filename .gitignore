@@ -21,3 +21,6 @@ vendor/
 # IDEs directories
 .idea
 .vscode
+
+# VSCode
+cmd/shortener/__debug_bin
