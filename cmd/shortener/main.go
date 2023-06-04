@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MWT-proger/shortener/internal/shortener/router"
+	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
 func main() {
@@ -13,5 +14,6 @@ func main() {
 }
 
 func run() error {
+	storage.InitJsonFileStorage()
 	return http.ListenAndServe(`:8080`, router.Router())
 }

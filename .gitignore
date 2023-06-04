@@ -24,3 +24,5 @@ vendor/
 
 # VSCode
 cmd/shortener/__debug_bin
+
+db.json

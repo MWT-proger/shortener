@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
 func BaseHandler(res http.ResponseWriter, req *http.Request) {
@@ -31,6 +33,7 @@ func BaseHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
+	var shortUrl string
 
 	defer req.Body.Close()
 	requestData, err := io.ReadAll((req.Body))
@@ -44,7 +47,7 @@ func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortUrl := "sdfsd"
+	shortUrl = storage.SetInStorage(stringRequestData)
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
@@ -57,7 +60,12 @@ func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 
 func GetUrlByKeyHandler(res http.ResponseWriter, req *http.Request) {
 
-	fullUrl := "https://proglib.io/p/rest-api-go"
+	fullUrl := storage.GetFromStorage(req.URL.Path[1:])
+
+	if fullUrl == "" {
+		http.Error(res, "Bad Request", http.StatusBadRequest)
+		return
+	}
 
 	res.Header().Set("Location", fullUrl)
 	res.WriteHeader(http.StatusTemporaryRedirect)
