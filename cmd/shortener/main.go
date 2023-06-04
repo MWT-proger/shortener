@@ -14,6 +14,6 @@ func main() {
 }
 
 func run() error {
-	storage.InitJsonFileStorage()
+	storage.InitJSONFileStorage()
 	return http.ListenAndServe(`:8080`, router.Router())
 }
