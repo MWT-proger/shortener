@@ -52,6 +52,7 @@ func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 
+	res.Write([]byte("http://"))
 	res.Write([]byte(req.Host))
 	res.Write([]byte("/"))
 	res.Write([]byte(shortURL))
