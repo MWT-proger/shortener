@@ -10,7 +10,7 @@ import (
 
 const DB = "../../db.json"
 
-func InitJsonFileStorage() {
+func InitJSONFileStorage() {
 	// Проверяет есть ли файл по указанному пути и если нет, создаёт его
 	if _, err := os.ReadFile(DB); err != nil {
 		str := "{}"
@@ -20,30 +20,30 @@ func InitJsonFileStorage() {
 	}
 }
 
-func SetInStorage(fullUrl string) string {
+func SetInStorage(fullURL string) string {
 	// Добавляет в хранилище полную ссылку и присваевает ей ключ
-	shortUrl := utils.StringWithCharset(5)
+	shortURL := utils.StringWithCharset(5)
 
-	dbJson := make(map[string]string, 0)
+	dbJSON := make(map[string]string, 0)
 	content, err := os.ReadFile(DB)
 
 	if err == nil {
-		if err = json.Unmarshal(content, &dbJson); err == nil {
+		if err = json.Unmarshal(content, &dbJSON); err == nil {
 
 			for {
-				_, ok := dbJson[shortUrl]
+				_, ok := dbJSON[shortURL]
 				if !ok {
-					dbJson[shortUrl] = fullUrl
+					dbJSON[shortURL] = fullURL
 					break
 				}
-				shortUrl = utils.StringWithCharset(5)
+				shortURL = utils.StringWithCharset(5)
 
 			}
 
-			b, err := json.Marshal(dbJson)
+			b, err := json.Marshal(dbJSON)
 			if err == nil {
 				os.WriteFile(DB, b, 0644)
-				return shortUrl
+				return shortURL
 			}
 		}
 	}
@@ -51,18 +51,18 @@ func SetInStorage(fullUrl string) string {
 
 }
 
-func GetFromStorage(shortUrl string) string {
+func GetFromStorage(shortURL string) string {
 	// Возвращает fullUrl по shortUrl
 
-	dbJson := make(map[string]string, 0)
+	dbJSON := make(map[string]string, 0)
 	content, err := os.ReadFile(DB)
 
 	if err == nil {
-		if err = json.Unmarshal(content, &dbJson); err == nil {
+		if err = json.Unmarshal(content, &dbJSON); err == nil {
 
-			fullUrl, ok := dbJson[shortUrl]
+			fullURL, ok := dbJSON[shortURL]
 			if ok {
-				return fullUrl
+				return fullURL
 			}
 
 		}

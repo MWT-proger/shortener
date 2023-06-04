@@ -20,7 +20,7 @@ func BaseHandler(res http.ResponseWriter, req *http.Request) {
 
 	if idx := strings.Index(req.URL.Path[1:], "/"); req.Method == http.MethodGet && idx < 0 && req.URL.Path != "/" {
 
-		GetUrlByKeyHandler(res, req)
+		GetURLByKeyHandler(res, req)
 
 	} else if req.Method == http.MethodPost && req.URL.Path == "/" {
 
@@ -33,7 +33,7 @@ func BaseHandler(res http.ResponseWriter, req *http.Request) {
 }
 
 func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
-	var shortUrl string
+	var shortURL string
 
 	defer req.Body.Close()
 	requestData, err := io.ReadAll((req.Body))
@@ -47,26 +47,26 @@ func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortUrl = storage.SetInStorage(stringRequestData)
+	shortURL = storage.SetInStorage(stringRequestData)
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 
 	res.Write([]byte(req.Host))
 	res.Write([]byte("/"))
-	res.Write([]byte(shortUrl))
+	res.Write([]byte(shortURL))
 
 }
 
-func GetUrlByKeyHandler(res http.ResponseWriter, req *http.Request) {
+func GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
 
-	fullUrl := storage.GetFromStorage(req.URL.Path[1:])
+	fullURL := storage.GetFromStorage(req.URL.Path[1:])
 
-	if fullUrl == "" {
+	if fullURL == "" {
 		http.Error(res, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	res.Header().Set("Location", fullUrl)
+	res.Header().Set("Location", fullURL)
 	res.WriteHeader(http.StatusTemporaryRedirect)
 }
