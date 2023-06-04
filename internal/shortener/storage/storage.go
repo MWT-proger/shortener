@@ -2,8 +2,8 @@ package storage
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
@@ -12,9 +12,9 @@ const DB = "../../db.json"
 
 func InitJsonFileStorage() {
 	// Проверяет есть ли файл по указанному пути и если нет, создаёт его
-	if _, err := ioutil.ReadFile(DB); err != nil {
+	if _, err := os.ReadFile(DB); err != nil {
 		str := "{}"
-		if err = ioutil.WriteFile(DB, []byte(str), 0644); err != nil {
+		if err = os.WriteFile(DB, []byte(str), 0644); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -25,7 +25,7 @@ func SetInStorage(fullUrl string) string {
 	shortUrl := utils.StringWithCharset(5)
 
 	dbJson := make(map[string]string, 0)
-	content, err := ioutil.ReadFile(DB)
+	content, err := os.ReadFile(DB)
 
 	if err == nil {
 		if err = json.Unmarshal(content, &dbJson); err == nil {
@@ -42,7 +42,7 @@ func SetInStorage(fullUrl string) string {
 
 			b, err := json.Marshal(dbJson)
 			if err == nil {
-				ioutil.WriteFile(DB, b, 0644)
+				os.WriteFile(DB, b, 0644)
 				return shortUrl
 			}
 		}
@@ -55,7 +55,7 @@ func GetFromStorage(shortUrl string) string {
 	// Возвращает fullUrl по shortUrl
 
 	dbJson := make(map[string]string, 0)
-	content, err := ioutil.ReadFile(DB)
+	content, err := os.ReadFile(DB)
 
 	if err == nil {
 		if err = json.Unmarshal(content, &dbJson); err == nil {

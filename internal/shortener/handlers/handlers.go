@@ -12,11 +12,11 @@ import (
 func BaseHandler(res http.ResponseWriter, req *http.Request) {
 	// Базовый хендлер для хардкорного первого инкремента
 
-	ct := req.Header.Get("Content-Type")
-	if ct != "text/plain" {
-		http.Error(res, "Invalid Content-Type header type.", http.StatusBadRequest)
-		return
-	}
+	// ct := req.Header.Get("Content-Type")
+	// if ct != "text/plain" {
+	// 	http.Error(res, "Invalid Content-Type header type.", http.StatusBadRequest)
+	// 	return
+	// }
 
 	if idx := strings.Index(req.URL.Path[1:], "/"); req.Method == http.MethodGet && idx < 0 && req.URL.Path != "/" {
 
