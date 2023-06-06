@@ -50,6 +50,7 @@ func TestAPIHandlerGetURLByKeyHandler(t *testing.T) {
 
 			h.GetURLByKeyHandler(w, r, m)
 			result := w.Result()
+			defer result.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, result.StatusCode, "Код ответа не совпадает с ожидаемым")
 			assert.Equal(t, tt.expectedLocation, result.Header.Get("Location"), "Location не совпадает с ожидаемым")
@@ -89,6 +90,7 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 
 			h.GenerateShortkeyHandler(w, r, m)
 			result := w.Result()
+			defer result.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, result.StatusCode, "Код ответа не совпадает с ожидаемым")
 			if tt.expectedCode == http.StatusOK {
