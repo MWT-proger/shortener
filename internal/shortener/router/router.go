@@ -8,6 +8,7 @@ import (
 
 func Router() *http.ServeMux {
 	r := http.NewServeMux()
-	r.HandleFunc("/", handlers.BaseHandler)
+	h, _ := handlers.NewAPIHandler()
+	r.HandleFunc("/", h.BaseHandler)
 	return r
 }

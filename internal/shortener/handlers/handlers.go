@@ -9,65 +9,81 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
-func BaseHandler(res http.ResponseWriter, req *http.Request) {
-	// Базовый хендлер для хардкорного первого инкремента
-
-	// ct := req.Header.Get("Content-Type")
-	// if ct != "text/plain" {
-	// 	http.Error(res, "Invalid Content-Type header type.", http.StatusBadRequest)
-	// 	return
-	// }
-
-	if idx := strings.Index(req.URL.Path[1:], "/"); req.Method == http.MethodGet && idx < 0 && req.URL.Path != "/" {
-
-		GetURLByKeyHandler(res, req)
-
-	} else if req.Method == http.MethodPost && req.URL.Path == "/" {
-
-		GenerateShortkeyHandler(res, req)
-
-	} else {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
-	}
-
+type APIHandler struct {
+	storage storage.Storage
 }
 
-func GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
+func NewAPIHandler() (h *APIHandler, err error) {
+	return &APIHandler{}, err
+}
+
+func (h *APIHandler) BaseHandler(res http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+
+	case http.MethodGet:
+		h.GetURLByKeyHandler(res, req, &h.storage)
+		return
+
+	case http.MethodPost:
+		h.GenerateShortkeyHandler(res, req, &h.storage)
+		return
+
+	default:
+		http.Error(res, "Bad Request", http.StatusBadRequest)
+	}
+}
+
+func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request, storg storage.OperationStorage) {
 	var shortURL string
 
-	defer req.Body.Close()
-	requestData, err := io.ReadAll((req.Body))
-	if err != nil {
-		log.Fatal(err)
+	if req.Method == http.MethodPost {
+		if req.URL.Path == "/" {
+
+			defer req.Body.Close()
+			requestData, err := io.ReadAll((req.Body))
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			stringRequestData := string(requestData)
+			if stringRequestData != "" {
+				shortURL, err = storg.SetInStorage(stringRequestData)
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				res.Header().Set("content-type", "text/plain")
+				res.WriteHeader(http.StatusCreated)
+
+				res.Write([]byte("http://" + req.Host + "/" + shortURL))
+				return
+			}
+
+		}
 	}
 
-	stringRequestData := string(requestData)
-	if stringRequestData == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	shortURL = storage.SetInStorage(stringRequestData)
-
-	res.Header().Set("content-type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
-
-	res.Write([]byte("http://"))
-	res.Write([]byte(req.Host))
-	res.Write([]byte("/"))
-	res.Write([]byte(shortURL))
-
+	http.Error(res, "Bad Request", http.StatusBadRequest)
 }
 
-func GetURLByKeyHandler(res http.ResponseWriter, req *http.Request) {
+func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request, s storage.OperationStorage) {
 
-	fullURL := storage.GetFromStorage(req.URL.Path[1:])
+	if r.Method == http.MethodGet {
+		if idx := strings.Index(r.URL.Path[1:], "/"); idx < 0 && r.URL.Path != "/" {
 
-	if fullURL == "" {
-		http.Error(res, "Bad Request", http.StatusBadRequest)
-		return
+			fullURL, err := s.GetFromStorage(r.URL.Path[1:])
+			if err != nil {
+				http.Error(w, "Bad Request", http.StatusBadRequest)
+			}
+
+			if fullURL != "" {
+				w.Header().Set("Location", fullURL)
+				w.WriteHeader(http.StatusTemporaryRedirect)
+				return
+			}
+
+		}
 	}
 
-	res.Header().Set("Location", fullURL)
-	res.WriteHeader(http.StatusTemporaryRedirect)
+	http.Error(w, "Bad Request", http.StatusBadRequest)
 }
