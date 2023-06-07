@@ -40,7 +40,7 @@ func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.
 		res.WriteHeader(http.StatusCreated)
 
 		if conf.BaseURLShortener != "" {
-			res.Write([]byte(conf.BaseURLShortener + shortURL))
+			res.Write([]byte(conf.BaseURLShortener + "/" + shortURL))
 		} else {
 			res.Write([]byte("http://" + req.Host + "/" + shortURL))
 		}
