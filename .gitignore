@@ -27,3 +27,4 @@ cmd/shortener/__debug_bin
 
 db.json
 cmd/client
+cmd/testpractik

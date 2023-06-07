@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/go-chi/chi"
 )
@@ -19,6 +20,7 @@ func NewAPIHandler(s storage.OperationStorage) (h *APIHandler, err error) {
 
 func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 	var shortURL string
+	conf := configs.GetConfig()
 
 	defer req.Body.Close()
 	requestData, err := io.ReadAll((req.Body))
@@ -37,7 +39,11 @@ func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.
 		res.Header().Set("content-type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 
-		res.Write([]byte("http://" + req.Host + "/" + shortURL))
+		if conf.BaseURLShortener != "" {
+			res.Write([]byte(conf.BaseURLShortener + shortURL))
+		} else {
+			res.Write([]byte("http://" + req.Host + "/" + shortURL))
+		}
 		return
 	}
 

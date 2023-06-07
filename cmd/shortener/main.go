@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
@@ -14,6 +16,11 @@ func main() {
 }
 
 func run() error {
+	configInit := configs.InitConfig()
+	parseFlags(configInit)
 	storage.InitJSONFileStorage()
-	return http.ListenAndServe(`:8080`, router.Router())
+
+	conf := configs.GetConfig()
+	fmt.Println("Running server on", conf.HostServer)
+	return http.ListenAndServe(conf.HostServer, router.Router())
 }
