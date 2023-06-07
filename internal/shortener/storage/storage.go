@@ -5,10 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
-
-const DB = "../../db.json"
 
 type OperationStorage interface {
 	SetInStorage(fullURL string) (string, error)
@@ -19,9 +18,11 @@ type Storage struct {
 
 func InitJSONFileStorage() {
 	// Проверяет есть ли файл по указанному пути и если нет, создаёт его
-	if _, err := os.ReadFile(DB); err != nil {
+	conf := configs.GetConfig()
+
+	if _, err := os.ReadFile(conf.JSONFileDB); err != nil {
 		str := "{}"
-		if err = os.WriteFile(DB, []byte(str), 0644); err != nil {
+		if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -29,10 +30,11 @@ func InitJSONFileStorage() {
 
 func (s *Storage) SetInStorage(fullURL string) (string, error) {
 	// Добавляет в хранилище полную ссылку и присваевает ей ключ
+	conf := configs.GetConfig()
 	shortURL := utils.StringWithCharset(5)
 
 	dbJSON := make(map[string]string, 0)
-	content, err := os.ReadFile(DB)
+	content, err := os.ReadFile(conf.JSONFileDB)
 
 	if err != nil {
 		return "", err
@@ -56,7 +58,7 @@ func (s *Storage) SetInStorage(fullURL string) (string, error) {
 		return "", err
 	}
 
-	os.WriteFile(DB, b, 0644)
+	os.WriteFile(conf.JSONFileDB, b, 0644)
 	return shortURL, nil
 
 }
@@ -65,7 +67,8 @@ func (s *Storage) GetFromStorage(shortURL string) (string, error) {
 	// Достаёт из хранилища и возвращает полную ссылку по ключу
 
 	dbJSON := make(map[string]string, 0)
-	content, err := os.ReadFile(DB)
+	conf := configs.GetConfig()
+	content, err := os.ReadFile(conf.JSONFileDB)
 
 	if err != nil {
 		return "", err

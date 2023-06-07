@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -92,16 +93,21 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 		mapKeyValue  map[string]string
 		expectedCode int
 		expectedBody string
+		envBaseURL   string
 	}{
-		{name: "Тест 1 - Не верный URL", URL: "/testKey", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusNotFound, expectedBody: ""},
-		{name: "Тест 2 - Успешный запрос", URL: "/", key: "http://example-full-url.com/", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "http://example.com/testKey"},
-		{name: "Тест 3 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, expectedBody: ""},
-		{name: "Тест 4 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed, expectedBody: ""},
-		{name: "Тест 5 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: ""},
+		{name: "Тест 1 - Не верный URL", URL: "/testKey", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusNotFound, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 2 - Успешный запрос", URL: "/", key: "http://example-full-url.com/", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "http://example.com/testKey", envBaseURL: ""},
+		{name: "Тест 3 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 4 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 5 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 6 - Проверка BaseURL из ENV", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "http://site.com/testKey", envBaseURL: "http://site.com"},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.envBaseURL != "" {
+				os.Setenv("BASE_URL", tt.envBaseURL)
+			}
 			m := &MockStorage{testData: tt.mapKeyValue}
 			h := &APIHandler{m}
 

@@ -5,6 +5,7 @@ import "os"
 type Config struct {
 	HostServer       string `env:"SERVER_ADDRESS"`
 	BaseURLShortener string `env:"BASE_URL"`
+	JSONFileDB       string
 }
 
 var newConfig Config
@@ -13,6 +14,7 @@ func InitConfig() *Config {
 	newConfig = Config{
 		HostServer:       ":8080",
 		BaseURLShortener: "",
+		JSONFileDB:       "../../db.json",
 	}
 	return &newConfig
 }
