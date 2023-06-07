@@ -1,14 +1,18 @@
 package router
 
 import (
-	"net/http"
-
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
+	"github.com/MWT-proger/shortener/internal/shortener/storage"
+	"github.com/go-chi/chi"
 )
 
-func Router() *http.ServeMux {
-	r := http.NewServeMux()
-	h, _ := handlers.NewAPIHandler()
-	r.HandleFunc("/", h.BaseHandler)
+func Router() *chi.Mux {
+
+	r := chi.NewRouter()
+	h, _ := handlers.NewAPIHandler(&storage.Storage{})
+
+	r.Post("/", h.GenerateShortkeyHandler)
+	r.Get("/{shortKey}", h.GetURLByKeyHandler)
+
 	return r
 }
