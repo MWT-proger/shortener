@@ -14,11 +14,18 @@ func main() {
 		panic(err)
 	}
 }
+func initProject() {
+	configInit := configs.InitConfig()
+
+	parseFlags(configInit)
+
+	configs.GetConfigFromEnv()
+
+	storage.InitJSONFileStorage()
+}
 
 func run() error {
-	configInit := configs.InitConfig()
-	parseFlags(configInit)
-	storage.InitJSONFileStorage()
+	initProject()
 
 	conf := configs.GetConfig()
 	fmt.Println("Running server on", conf.HostServer)
