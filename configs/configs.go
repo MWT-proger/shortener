@@ -16,7 +16,7 @@ func InitConfig() *Config {
 	newConfig = Config{
 		HostServer:       ":8080",
 		BaseURLShortener: "",
-		JSONFileDB:       "db.json",
+		JSONFileDB:       "../../db.json",
 	}
 	return &newConfig
 }
