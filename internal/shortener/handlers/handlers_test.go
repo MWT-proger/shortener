@@ -17,11 +17,11 @@ type MockStorage struct {
 	testData map[string]string
 }
 
-func (s *MockStorage) SetInStorage(fullURL string) (string, error) {
+func (s *MockStorage) Set(fullURL string) (string, error) {
 	return s.testData[fullURL], nil
 }
 
-func (s *MockStorage) GetFromStorage(shortURL string) (string, error) {
+func (s *MockStorage) Get(shortURL string) (string, error) {
 	return s.testData[shortURL], nil
 }
 

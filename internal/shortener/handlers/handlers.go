@@ -18,6 +18,7 @@ func NewAPIHandler(s storage.OperationStorage) (h *APIHandler, err error) {
 	return &APIHandler{s}, err
 }
 
+// Принимает боьщой URL и возвращает маленький
 func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.Request) {
 	var shortURL string
 	conf := configs.GetConfig()
@@ -31,7 +32,7 @@ func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.
 
 	stringRequestData := string(requestData)
 	if stringRequestData != "" {
-		shortURL, err = h.storage.SetInStorage(stringRequestData)
+		shortURL, err = h.storage.Set(stringRequestData)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -50,9 +51,10 @@ func (h *APIHandler) GenerateShortkeyHandler(res http.ResponseWriter, req *http.
 	http.Error(res, "Bad Request", http.StatusBadRequest)
 }
 
+// Возвращает по ключу длинный URL
 func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
 
-	fullURL, err := h.storage.GetFromStorage(chi.URLParam(r, "shortKey"))
+	fullURL, err := h.storage.Get(chi.URLParam(r, "shortKey"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 	}

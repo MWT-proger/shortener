@@ -10,20 +10,25 @@ type Config struct {
 
 var newConfig Config
 
+// InitConfig() Присваивает локальной не импортируемой переменной newConfig базовые значения
+// Вызывается один раз при старте проекта
 func InitConfig() *Config {
 	newConfig = Config{
 		HostServer:       ":8080",
 		BaseURLShortener: "",
-		JSONFileDB:       "../../db.json",
+		JSONFileDB:       "temp/db.json",
 	}
 	return &newConfig
 }
 
+// GetConfig() выводит не импортируемую переменную newConfig
 func GetConfig() Config {
 	return newConfig
 }
 
-func GetConfigFromEnv() {
+// SetConfigFromEnv() Прсваевает полям значения из ENV
+// Вызывается один раз при старте проекта
+func SetConfigFromEnv() {
 	if envBaseURLShortener := os.Getenv("SERVER_ADDRESS"); envBaseURLShortener != "" {
 		newConfig.HostServer = envBaseURLShortener
 	}

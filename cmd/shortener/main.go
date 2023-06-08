@@ -14,16 +14,19 @@ func main() {
 		panic(err)
 	}
 }
+
+// initProject() иницилизирует все необходимые переменный проекта
 func initProject() {
 	configInit := configs.InitConfig()
 
 	parseFlags(configInit)
 
-	configs.GetConfigFromEnv()
+	configs.SetConfigFromEnv()
 
-	storage.InitJSONFileStorage()
+	storage.InitJSONFile()
 }
 
+// run() запускает сервер
 func run() error {
 	initProject()
 

@@ -68,7 +68,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("SERVER_ADDRESS", tt.want.HostServer)
 			os.Setenv("BASE_URL", tt.want.BaseURLShortener)
-			GetConfigFromEnv()
+			SetConfigFromEnv()
 			assert.Equal(t, newConfig, tt.want, "newConfig не совпадает с ожидаемым")
 		})
 	}

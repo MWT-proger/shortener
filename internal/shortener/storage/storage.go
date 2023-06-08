@@ -10,26 +10,28 @@ import (
 )
 
 type OperationStorage interface {
-	SetInStorage(fullURL string) (string, error)
-	GetFromStorage(shortURL string) (string, error)
+	Set(fullURL string) (string, error)
+	Get(shortURL string) (string, error)
 }
 type Storage struct {
 }
 
-func InitJSONFileStorage() {
-	// Проверяет есть ли файл по указанному пути и если нет, создаёт его
+// InitJSONFile() Проверяет есть ли файл по указанному пути и если нет, создаёт его
+func InitJSONFile() {
 	conf := configs.GetConfig()
 
 	if _, err := os.ReadFile(conf.JSONFileDB); err != nil {
 		str := "{}"
 		if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
+
 			log.Fatal(err)
 		}
 	}
 }
 
-func (s *Storage) SetInStorage(fullURL string) (string, error) {
-	// Добавляет в хранилище полную ссылку и присваевает ей ключ
+// Добавляет в хранилище полную ссылку и присваевает ей ключ
+func (s *Storage) Set(fullURL string) (string, error) {
+
 	conf := configs.GetConfig()
 	shortURL := utils.StringWithCharset(5)
 
@@ -63,8 +65,8 @@ func (s *Storage) SetInStorage(fullURL string) (string, error) {
 
 }
 
-func (s *Storage) GetFromStorage(shortURL string) (string, error) {
-	// Достаёт из хранилища и возвращает полную ссылку по ключу
+// Достаёт из хранилища и возвращает полную ссылку по ключу
+func (s *Storage) Get(shortURL string) (string, error) {
 
 	dbJSON := make(map[string]string, 0)
 	conf := configs.GetConfig()

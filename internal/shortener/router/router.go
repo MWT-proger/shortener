@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// Router() Перенаправляет запросы на необходимые хендлеры
 func Router() *chi.Mux {
 
 	r := chi.NewRouter()
