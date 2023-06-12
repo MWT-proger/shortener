@@ -16,14 +16,20 @@ func main() {
 }
 
 // initProject() иницилизирует все необходимые переменный проекта
-func initProject() {
+func initProject() error {
 	configInit := configs.InitConfig()
 
 	parseFlags(configInit)
 
 	configs.SetConfigFromEnv()
 
-	storage.InitJSONFile()
+	err := storage.InitJSONFile()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // run() запускает сервер

@@ -2,14 +2,13 @@ package storage
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
-type OperationStorage interface {
+type OperationStorager interface {
 	Set(fullURL string) (string, error)
 	Get(shortURL string) (string, error)
 }
@@ -17,16 +16,17 @@ type Storage struct {
 }
 
 // InitJSONFile() Проверяет есть ли файл по указанному пути и если нет, создаёт его
-func InitJSONFile() {
+func InitJSONFile() error {
 	conf := configs.GetConfig()
 
 	if _, err := os.ReadFile(conf.JSONFileDB); err != nil {
 		str := "{}"
 		if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
 
-			log.Fatal(err)
+			return err
 		}
 	}
+	return nil
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ

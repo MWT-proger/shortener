@@ -1,9 +1,10 @@
 package router
 
 import (
+	"github.com/go-chi/chi"
+
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
-	"github.com/go-chi/chi"
 )
 
 // Router() Перенаправляет запросы на необходимые хендлеры
