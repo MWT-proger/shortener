@@ -1,16 +1,21 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"context"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/router"
+	"github.com/MWT-proger/shortener/internal/shortener/server"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
 func main() {
-	if err := run(); err != nil {
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	if err := run(ctx); err != nil {
+		cancel()
 		panic(err)
 	}
 }
@@ -23,20 +28,33 @@ func initProject() error {
 
 	configs.SetConfigFromEnv()
 
-	err := storage.InitJSONFile()
+	return nil
+}
+
+// run() выполняет все предворительные действия и вызывает функцию запуска сервера
+func run(ctx context.Context) error {
+	initProject()
+
+	var (
+		s    = &storage.Storage{}
+		h, _ = handlers.NewAPIHandler(s)
+		r    = router.Router(h)
+	)
+
+	err := s.InitJSONFile()
 
 	if err != nil {
 		return err
 	}
 
+	go s.BackupToJSONFile(ctx)
+
+	err = server.Run(r)
+
+	if err != nil {
+
+		return err
+	}
+
 	return nil
-}
-
-// run() запускает сервер
-func run() error {
-	initProject()
-
-	conf := configs.GetConfig()
-	fmt.Println("Running server on", conf.HostServer)
-	return http.ListenAndServe(conf.HostServer, router.Router())
 }

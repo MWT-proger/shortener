@@ -28,18 +28,21 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	stringRequestData := string(requestData)
 
 	if stringRequestData == "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
 	}
 
 	shortURL, err = h.storage.Set(stringRequestData)
 
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("content-type", "text/plain")
@@ -60,10 +63,12 @@ func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) 
 
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
+		return
 	}
 
 	if fullURL == "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Location", fullURL)
