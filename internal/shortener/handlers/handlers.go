@@ -18,7 +18,7 @@ func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
 	return &APIHandler{s}, err
 }
 
-// Принимает большой URL и возвращает маленький
+// GenerateShortkeyHandler Принимает большой URL и возвращает маленький
 func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
 	var shortURL string
 	conf := configs.GetConfig()
@@ -56,7 +56,7 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 
 }
 
-// Возвращает по ключу длинный URL
+// GetURLByKeyHandler Возвращает по ключу длинный URL
 func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	fullURL, err := h.storage.Get(chi.URLParam(r, "shortKey"))

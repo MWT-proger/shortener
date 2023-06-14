@@ -21,25 +21,12 @@ func main() {
 }
 
 // initProject() иницилизирует все необходимые переменный проекта
-func initProject() error {
+func initProject(s *storage.Storage) error {
 	configInit := configs.InitConfig()
 
 	parseFlags(configInit)
 
 	configs.SetConfigFromEnv()
-
-	return nil
-}
-
-// run() выполняет все предворительные действия и вызывает функцию запуска сервера
-func run(ctx context.Context) error {
-	initProject()
-
-	var (
-		s    = &storage.Storage{}
-		h, _ = handlers.NewAPIHandler(s)
-		r    = router.Router(h)
-	)
 
 	err := s.InitJSONFile()
 
@@ -47,9 +34,23 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	return nil
+}
+
+// run() выполняет все предворительные действия и вызывает функцию запуска сервера
+func run(ctx context.Context) error {
+
+	var (
+		s    = &storage.Storage{}
+		h, _ = handlers.NewAPIHandler(s)
+		r    = router.Router(h)
+	)
+
+	initProject(s)
+
 	go s.BackupToJSONFile(ctx)
 
-	err = server.Run(r)
+	err := server.Run(r)
 
 	if err != nil {
 
