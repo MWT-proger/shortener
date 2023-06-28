@@ -28,3 +28,6 @@ cmd/shortener/__debug_bin
 db.json
 cmd/client
 cmd/testpractik
+cmd/test/info.log
+cmd/test/main.go
+cmd/test/server.log
