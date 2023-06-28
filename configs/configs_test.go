@@ -16,11 +16,13 @@ func TestGetConfig(t *testing.T) {
 			HostServer:       ":1234",
 			BaseURLShortener: "http://example.ru",
 			JSONFileDB:       "../../db.json",
+			LogLevel:         "info",
 		}},
 		{name: "Тест 1", want: Config{
 			HostServer:       ":7777",
 			BaseURLShortener: "",
 			JSONFileDB:       "../../dbExample.json",
+			LogLevel:         "debug",
 		}},
 	}
 	for _, tt := range tests {
@@ -43,6 +45,7 @@ func TestInitConfig(t *testing.T) {
 			HostServer:       ":8080",
 			BaseURLShortener: "",
 			JSONFileDB:       "../../db.json",
+			LogLevel:         "info",
 		}},
 	}
 	for _, tt := range tests {
@@ -62,12 +65,14 @@ func TestGetConfigFromEnv(t *testing.T) {
 			HostServer:       ":7777",
 			BaseURLShortener: "http://site.ru",
 			JSONFileDB:       "../../db.json",
+			LogLevel:         "info",
 		}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("SERVER_ADDRESS", tt.want.HostServer)
 			os.Setenv("BASE_URL", tt.want.BaseURLShortener)
+			os.Setenv("LOG_LEVEL", tt.want.LogLevel)
 			SetConfigFromEnv()
 			assert.Equal(t, newConfig, tt.want, "newConfig не совпадает с ожидаемым")
 		})

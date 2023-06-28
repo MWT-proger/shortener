@@ -5,6 +5,7 @@ import (
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
+	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
@@ -26,11 +27,13 @@ func initProject(s *storage.Storage) error {
 
 	parseFlags(configInit)
 
-	configs.SetConfigFromEnv()
+	conf := configs.SetConfigFromEnv()
 
-	err := s.InitJSONFile()
+	if err := s.InitJSONFile(); err != nil {
+		return err
+	}
 
-	if err != nil {
+	if err := logger.Initialize(conf.LogLevel); err != nil {
 		return err
 	}
 
