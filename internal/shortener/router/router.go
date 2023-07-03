@@ -14,6 +14,7 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 	r.Use(logger.RequestLogger)
 	r.Post("/", h.GenerateShortkeyHandler)
 	r.Get("/{shortKey}", h.GetURLByKeyHandler)
+	r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
 
 	return r
 }
