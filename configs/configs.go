@@ -17,7 +17,7 @@ func InitConfig() *Config {
 	newConfig = Config{
 		HostServer:       ":8080",
 		BaseURLShortener: "",
-		JSONFileDB:       "../../db.json",
+		JSONFileDB:       "/tmp/short-url-db.json",
 		LogLevel:         "info",
 	}
 	return &newConfig
@@ -39,6 +39,9 @@ func SetConfigFromEnv() Config {
 	}
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
 		newConfig.LogLevel = envLogLevel
+	}
+	if envJSONFileDB := os.Getenv("FILE_STORAGE_PATH"); envJSONFileDB != "" {
+		newConfig.JSONFileDB = envJSONFileDB
 	}
 	return newConfig
 }
