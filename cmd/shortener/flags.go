@@ -10,7 +10,9 @@ import (
 // и сохраняет их значения в соответствующих переменных
 func parseFlags(conf *configs.Config) {
 
-	flag.StringVar(&conf.HostServer, "a", conf.HostServer, "address and port to run server")
-	flag.StringVar(&conf.BaseURLShortener, "b", conf.BaseURLShortener, "base URL for a short link")
+	flag.StringVar(&conf.HostServer, "a", conf.HostServer, "Адрес и порт для запуска сервера")
+	flag.StringVar(&conf.JSONFileDB, "f", conf.JSONFileDB, "полное имя файла, куда сохраняются данные в формате JSON")
+	flag.StringVar(&conf.BaseURLShortener, "b", conf.BaseURLShortener, "Базовый URl  который будет использоваться для короткой ссылки")
+	flag.StringVar(&conf.LogLevel, "l", "info", "Уровень логирования")
 	flag.Parse()
 }

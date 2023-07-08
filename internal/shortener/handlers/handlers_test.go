@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/MWT-proger/shortener/configs"
 )
 
 type MockStorage struct {
@@ -96,7 +99,7 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 		envBaseURL   string
 	}{
 		{name: "Тест 1 - Не верный URL", URL: "/testKey", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusNotFound, expectedBody: "", envBaseURL: ""},
-		{name: "Тест 2 - Успешный запрос", URL: "/", key: "http://example-full-url.com/", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "http://example.com/testKey", envBaseURL: ""},
+		{name: "Тест 2 - Успешный запрос", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "%v%v/testKey", envBaseURL: ""},
 		{name: "Тест 3 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
 		{name: "Тест 4 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
 		{name: "Тест 5 - Не верный метод запроса", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
@@ -108,6 +111,9 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 			if tt.envBaseURL != "" {
 				os.Setenv("BASE_URL", tt.envBaseURL)
 			}
+			configs.InitConfig()
+			configs.SetConfigFromEnv()
+
 			m := &MockStorage{testData: tt.mapKeyValue}
 			h := &APIHandler{m}
 
@@ -121,10 +127,76 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 			defer result.Body.Close()
 
 			assert.Equal(t, tt.expectedCode, result.StatusCode, "Код ответа не совпадает с ожидаемым")
-			if tt.expectedCode == http.StatusOK {
-				assert.Equal(t, tt.expectedBody, bodyResponse, "Тело ответа не совпадает с ожидаемым")
+			if tt.expectedCode == http.StatusCreated {
+
+				if tt.envBaseURL != "" {
+					assert.Equal(t, tt.expectedBody, bodyResponse, "Тело ответа не совпадает с ожидаемым")
+				} else {
+					resp := fmt.Sprintf(tt.expectedBody, "http://", result.Request.URL.Host)
+					assert.Equal(t, resp, bodyResponse, "Тело ответа не совпадает с ожидаемым")
+				}
+
 			}
 
 		})
 	}
+	os.Setenv("BASE_URL", "")
+}
+
+func TestAPIHandlerJSONGenerateShortkeyHandler(t *testing.T) {
+
+	testCases := []struct {
+		name         string
+		method       string
+		URL          string
+		requestData  string
+		mapKeyValue  map[string]string
+		expectedCode int
+		expectedBody string
+		envBaseURL   string
+	}{
+		{name: "Тест 1 - Не верный URL", URL: "/api/shorten/testKey", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusNotFound, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 2 - Успешный запрос", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: `{"result": "%v%v/testKey"}`, envBaseURL: ""},
+		{name: "Тест 3 - Не верный метод запроса", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodGet, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 4 - Не верный метод запроса", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPut, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 5 - Не верный метод запроса", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodDelete, expectedCode: http.StatusMethodNotAllowed, expectedBody: "", envBaseURL: ""},
+		{name: "Тест 6 - Проверка BaseURL из ENV", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: `{"result": "http://site.com/testKey"}`, envBaseURL: "http://site.com"},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.envBaseURL != "" {
+				os.Setenv("BASE_URL", tt.envBaseURL)
+			}
+			configs.InitConfig()
+			configs.SetConfigFromEnv()
+
+			m := &MockStorage{testData: tt.mapKeyValue}
+			h := &APIHandler{m}
+
+			router := chi.NewRouter()
+			router.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
+
+			ts := httptest.NewServer(router)
+
+			bodyRequest := strings.NewReader(tt.requestData)
+
+			result, bodyResponse := testRequest(t, ts, tt.method, tt.URL, bodyRequest)
+
+			defer result.Body.Close()
+
+			assert.Equal(t, tt.expectedCode, result.StatusCode, "Код ответа не совпадает с ожидаемым")
+			if tt.expectedCode == http.StatusCreated {
+				if tt.envBaseURL != "" {
+					assert.JSONEq(t, tt.expectedBody, bodyResponse, "Тело ответа не совпадает с ожидаемым")
+				} else {
+					resp := fmt.Sprintf(tt.expectedBody, "http://", result.Request.URL.Host)
+					assert.JSONEq(t, resp, bodyResponse, "Тело ответа не совпадает с ожидаемым")
+				}
+
+			}
+
+		})
+	}
+
 }
