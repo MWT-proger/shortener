@@ -16,6 +16,7 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 	r.Use(gzip.GzipMiddleware)
 	r.Post("/", h.GenerateShortkeyHandler)
 	r.Get("/{shortKey}", h.GetURLByKeyHandler)
+	r.Get("/ping", h.PingDB)
 	r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
 
 	return r

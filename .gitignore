@@ -31,3 +31,4 @@ cmd/testpractik
 cmd/test/info.log
 cmd/test/main.go
 cmd/test/server.log
+deployments/.env

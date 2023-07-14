@@ -9,11 +9,14 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
+	"github.com/MWT-proger/shortener/internal/shortener/storage/filestorage"
+	"github.com/MWT-proger/shortener/internal/shortener/storage/pgstorage"
 )
 
 func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	if err := run(ctx); err != nil {
 		cancel()
@@ -22,41 +25,50 @@ func main() {
 }
 
 // initProject() иницилизирует все необходимые переменный проекта
-func initProject(s *storage.Storage) error {
-	configInit := configs.InitConfig()
+func initProject(ctx context.Context) (storage.OperationStorager, error) {
+
+	var (
+		s          storage.OperationStorager
+		configInit = configs.InitConfig()
+	)
 
 	parseFlags(configInit)
 
 	conf := configs.SetConfigFromEnv()
 
-	if err := s.InitJSONFile(); err != nil {
-		return err
+	if conf.DatabaseDSN != "" {
+		s = &pgstorage.PgStorage{}
+	} else {
+		s = &filestorage.FileStorage{}
+	}
+
+	if err := s.Init(ctx); err != nil {
+		return nil, err
 	}
 
 	if err := logger.Initialize(conf.LogLevel); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return s, nil
 }
 
 // run() выполняет все предворительные действия и вызывает функцию запуска сервера
 func run(ctx context.Context) error {
-
-	var (
-		s    = &storage.Storage{}
-		h, _ = handlers.NewAPIHandler(s)
-		r    = router.Router(h)
-	)
-
-	initProject(s)
-
-	go s.BackupToJSONFile(ctx)
-
-	err := server.Run(r)
+	s, err := initProject(ctx)
 
 	if err != nil {
+		return err
+	}
 
+	defer s.Close()
+
+	h, _ := handlers.NewAPIHandler(s)
+	r := router.Router(h)
+
+	err = server.Run(r)
+
+	if err != nil {
 		return err
 	}
 

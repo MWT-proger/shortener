@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -20,6 +21,16 @@ type MockStorage struct {
 	testData map[string]string
 }
 
+func (s *MockStorage) Init(ctx context.Context) error {
+	return nil
+}
+func (s *MockStorage) Ping() error {
+	return nil
+}
+
+func (s *MockStorage) Close() error {
+	return nil
+}
 func (s *MockStorage) Set(fullURL string) (string, error) {
 	return s.testData[fullURL], nil
 }

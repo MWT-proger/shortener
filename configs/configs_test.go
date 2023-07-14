@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -17,12 +18,14 @@ func TestGetConfig(t *testing.T) {
 			BaseURLShortener: "http://example.ru",
 			JSONFileDB:       "../../db.json",
 			LogLevel:         "info",
+			DatabaseDSN:      "",
 		}},
-		{name: "Тест 1", want: Config{
+		{name: "Тест 2", want: Config{
 			HostServer:       ":7777",
 			BaseURLShortener: "",
 			JSONFileDB:       "../../dbExample.json",
 			LogLevel:         "debug",
+			DatabaseDSN:      "",
 		}},
 	}
 	for _, tt := range tests {
@@ -46,6 +49,7 @@ func TestInitConfig(t *testing.T) {
 			BaseURLShortener: "",
 			JSONFileDB:       "/tmp/short-url-db.json",
 			LogLevel:         "info",
+			DatabaseDSN:      "",
 		}},
 	}
 	for _, tt := range tests {
@@ -66,6 +70,8 @@ func TestGetConfigFromEnv(t *testing.T) {
 			BaseURLShortener: "http://site.ru",
 			JSONFileDB:       "/tmp/db.json",
 			LogLevel:         "info",
+			DatabaseDSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
+				`localhost`, `postgres`, `postgres`, `testDB`),
 		}},
 	}
 	for _, tt := range tests {
@@ -74,6 +80,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			os.Setenv("BASE_URL", tt.want.BaseURLShortener)
 			os.Setenv("LOG_LEVEL", tt.want.LogLevel)
 			os.Setenv("FILE_STORAGE_PATH", tt.want.JSONFileDB)
+			os.Setenv("DATABASE_DSN", tt.want.DatabaseDSN)
 			SetConfigFromEnv()
 			assert.Equal(t, newConfig, tt.want, "newConfig не совпадает с ожидаемым")
 		})
