@@ -1,4 +1,4 @@
-package storage
+package filestorage
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ func TestStorageGet(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Storage{
+			s := &FileStorage{
 				tempStorage: tt.tempStorage,
 			}
 			got, _ := s.Get(tt.key)
@@ -43,7 +43,7 @@ func TestStorageSet(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &Storage{
+			s := &FileStorage{
 				tempStorage: tt.tempStorage,
 			}
 			got, _ := s.Set(tt.value)
