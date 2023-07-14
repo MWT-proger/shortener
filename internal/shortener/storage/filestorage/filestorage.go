@@ -22,23 +22,27 @@ func (s *FileStorage) Init(ctx context.Context) error {
 	conf := configs.GetConfig()
 
 	s.tempStorage = make(map[string]string, 0)
-	content, err := os.ReadFile(conf.JSONFileDB)
+	if conf.JSONFileDB != "" {
 
-	if err != nil {
-		str := "{}"
-		if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
-			return err
+		content, err := os.ReadFile(conf.JSONFileDB)
+
+		if err != nil {
+			str := "{}"
+			if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
+				return err
+			}
+
+		} else {
+
+			if err = json.Unmarshal(content, &s.tempStorage); err != nil {
+				return err
+
+			}
 		}
 
-	} else {
+		go s.BackupToJSONFile(ctx)
 
-		if err = json.Unmarshal(content, &s.tempStorage); err != nil {
-			return err
-
-		}
 	}
-
-	go s.BackupToJSONFile(ctx)
 	return nil
 
 }
