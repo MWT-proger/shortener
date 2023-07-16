@@ -4,11 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
@@ -87,6 +89,12 @@ func (s *PgStorage) Get(shortURL string) (string, error) {
 	err := row.Scan(&FullURL)
 
 	if err != nil {
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+
+		logger.Log.Error(err.Error())
 		return "", err
 	}
 
