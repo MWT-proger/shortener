@@ -12,8 +12,10 @@ import (
 func Router(h *handlers.APIHandler) *chi.Mux {
 
 	r := chi.NewRouter()
+
 	r.Use(logger.RequestLogger)
 	r.Use(gzip.GzipMiddleware)
+
 	r.Post("/", h.GenerateShortkeyHandler)
 	r.Get("/{shortKey}", h.GetURLByKeyHandler)
 	r.Get("/ping", h.PingDB)

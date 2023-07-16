@@ -3,12 +3,17 @@ package pgstorage
 import (
 	"context"
 	"database/sql"
+	"embed"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/pressly/goose/v3"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
+
+//go:embed migrations/*.sql
+var embedMigrations embed.FS
 
 type PgStorage struct {
 	storage.Storage
@@ -24,8 +29,28 @@ func (s *PgStorage) Init(ctx context.Context) error {
 	}
 	s.db = db
 
+	if err := s.Migration(); err != nil {
+		return err
+	}
+
 	return nil
 
+}
+
+// Migration() проверяет нувые миграции и при неообходимости добавляет в БД
+func (s *PgStorage) Migration() error {
+
+	goose.SetBaseFS(embedMigrations)
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return err
+	}
+
+	if err := goose.Up(s.db, "migrations"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PgStorage) Ping() error {
@@ -53,5 +78,17 @@ func (s *PgStorage) Set(fullURL string) (string, error) {
 
 // Достаёт из хранилища и возвращает полную ссылку по ключу
 func (s *PgStorage) Get(shortURL string) (string, error) {
-	return "", nil
+	var FullURL string
+
+	row := s.db.QueryRowContext(context.Background(),
+		"SELECT full_url "+
+			"FROM content.shorturl WHERE short_key = $1 LIMIT 1;", shortURL)
+
+	err := row.Scan(&FullURL)
+
+	if err != nil {
+		return "", err
+	}
+
+	return FullURL, nil
 }
