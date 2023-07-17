@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
@@ -55,6 +56,7 @@ func (s *FileStorage) BackupToJSONFile(ctx context.Context) error {
 			return nil
 
 		default:
+			// TODO: Вынести время бэкапа в конфиг
 			time.Sleep(time.Minute * 10)
 			log.Println("Старт Резервного копирования")
 
@@ -101,4 +103,27 @@ func (s *FileStorage) Get(shortURL string) (string, error) {
 	}
 
 	return fullURL, nil
+}
+
+// Добавляет в хранилище полную ссылку и присваевает ей ключ
+func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+
+	for i, v := range data {
+
+		shortKey := utils.StringWithCharset(5)
+
+		for {
+			_, ok := s.tempStorage[shortKey]
+			if !ok {
+				s.tempStorage[shortKey] = v.OriginalURL
+				break
+			}
+			shortKey = utils.StringWithCharset(5)
+		}
+
+		data[i].ShortURL = baseShortURL + shortKey
+	}
+
+	return nil
+
 }
