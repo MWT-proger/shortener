@@ -51,14 +51,14 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-
+		w.Header().Set("content-type", "text/plain")
 		w.WriteHeader(http.StatusConflict)
 		isConflict = true
 
 	}
 
-	w.Header().Set("content-type", "text/plain")
 	if !isConflict {
+		w.Header().Set("content-type", "text/plain")
 		w.WriteHeader(http.StatusCreated)
 	}
 	w.Write([]byte(utils.GetBaseShortURL(r.Host) + shortURL))
@@ -128,7 +128,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		isConflict = true
 
@@ -142,8 +142,8 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	if !isConflict {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 	}
 	w.Write(resp)
