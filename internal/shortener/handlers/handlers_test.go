@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/models"
 )
 
 type MockStorage struct {
@@ -33,6 +34,10 @@ func (s *MockStorage) Close() error {
 }
 func (s *MockStorage) Set(fullURL string) (string, error) {
 	return s.testData[fullURL], nil
+}
+
+func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+	return nil
 }
 
 func (s *MockStorage) Get(shortURL string) (string, error) {

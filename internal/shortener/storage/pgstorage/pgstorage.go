@@ -99,10 +99,64 @@ func (s *PgStorage) Set(fullURL string) (string, error) {
 
 }
 
+// Добавляет в хранилище полную ссылку и присваевает ей ключ
+func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+
+	ctx := context.Background()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx,
+		"INSERT INTO content.shorturl (short_key, full_url) VALUES($1,$2) ON CONFLICT (short_key) DO NOTHING RETURNING short_key")
+
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+	defer stmt.Close()
+
+	for i, v := range data {
+
+		shortKey := ""
+		for {
+			row := stmt.QueryRowContext(ctx, utils.StringWithCharset(5), v.OriginalURL)
+
+			err := row.Scan(&shortKey)
+
+			if err != nil {
+
+				if errors.Is(err, sql.ErrNoRows) {
+					logger.Log.Debug("Возвращается пустой ключ из за дублирования в БД")
+					continue
+				}
+
+				logger.Log.Error(err.Error())
+				return err
+			}
+			break
+		}
+
+		data[i].ShortURL = baseShortURL + shortKey
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // doSet() Добавляет в БД или возвращает ошибку
 func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 
-	tx, err := s.db.Begin()
+	tx, err := s.db.BeginTx(ctx, nil)
 
 	if err != nil {
 		return err
