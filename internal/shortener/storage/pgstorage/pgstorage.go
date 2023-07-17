@@ -6,12 +6,16 @@ import (
 	"embed"
 	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
 
 	"github.com/MWT-proger/shortener/configs"
+	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
+	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
+	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
 //go:embed migrations/*.sql
@@ -74,7 +78,66 @@ func (s *PgStorage) Close() error {
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
 func (s *PgStorage) Set(fullURL string) (string, error) {
 
-	return "", nil
+	ctx := context.Background()
+	newModel := models.ShortURL{FullURL: fullURL}
+
+	for {
+		newModel.ShortKey = utils.StringWithCharset(5)
+
+		if err := s.doSet(ctx, &newModel); err != nil {
+
+			if errors.Is(err, &lErrors.ErrorDuplicateShortKey{}) {
+				continue
+			}
+			return "", err
+
+		}
+		break
+
+	}
+	return newModel.ShortKey, nil
+
+}
+
+// doSet() Добавляет в БД или возвращает ошибку
+func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
+
+	tx, err := s.db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer tx.Rollback()
+
+	stmt, err := tx.PrepareContext(ctx,
+		"INSERT INTO content.shorturl (short_key, full_url) VALUES($1,$2)")
+
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx, model.ShortKey, model.FullURL)
+
+	if err != nil {
+		logger.Log.Error(err.Error())
+
+		if pgError := err.(*pgconn.PgError); errors.Is(err, pgError) {
+
+			if pgError.Code == "23505" && pgError.ConstraintName == "shorturl_short_key_key" {
+				return &lErrors.ErrorDuplicateShortKey{}
+			}
+		}
+
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 
 }
 
