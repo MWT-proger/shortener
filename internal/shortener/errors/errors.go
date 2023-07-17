@@ -11,3 +11,9 @@ type ErrorDuplicateShortKey struct{}
 func (m *ErrorDuplicateShortKey) Error() string {
 	return "повторяющееся значение short_key нарушает уникальное ограничение"
 }
+
+type ErrorDuplicateFullURL struct{}
+
+func (m *ErrorDuplicateFullURL) Error() string {
+	return "повторяющееся значение full_url нарушает уникальное ограничение"
+}

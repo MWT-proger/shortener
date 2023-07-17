@@ -8,6 +8,9 @@ CREATE TABLE "content"."shorturl" (
 
 ALTER TABLE ONLY "content"."shorturl"
     ADD CONSTRAINT "shorturl_short_key_key" UNIQUE (short_key);
+
+ALTER TABLE ONLY "content"."shorturl"
+    ADD CONSTRAINT "shorturl_full_url_key" UNIQUE (full_url);
 -- +goose StatementEnd
 
 -- +goose Down

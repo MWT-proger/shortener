@@ -89,6 +89,10 @@ func (s *PgStorage) Set(fullURL string) (string, error) {
 			if errors.Is(err, &lErrors.ErrorDuplicateShortKey{}) {
 				continue
 			}
+			if errors.Is(err, &lErrors.ErrorDuplicateFullURL{}) {
+				newModel.ShortKey, _ = s.getShortKey(fullURL)
+				return newModel.ShortKey, &lErrors.ErrorDuplicateFullURL{}
+			}
 			return "", err
 
 		}
@@ -176,11 +180,14 @@ func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 
 	if err != nil {
 		logger.Log.Error(err.Error())
-
-		if pgError := err.(*pgconn.PgError); errors.Is(err, pgError) {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError); errors.Is(err, pgError) {
 
 			if pgError.Code == "23505" && pgError.ConstraintName == "shorturl_short_key_key" {
 				return &lErrors.ErrorDuplicateShortKey{}
+			}
+			if pgError.Code == "23505" && pgError.ConstraintName == "shorturl_full_url_key" {
+				return &lErrors.ErrorDuplicateFullURL{}
 			}
 		}
 
@@ -216,4 +223,26 @@ func (s *PgStorage) Get(shortURL string) (string, error) {
 	}
 
 	return FullURL, nil
+}
+
+func (s *PgStorage) getShortKey(FullURL string) (string, error) {
+	var shortURL string
+
+	row := s.db.QueryRowContext(context.Background(),
+		"SELECT short_key "+
+			"FROM content.shorturl WHERE full_url = $1 LIMIT 1;", FullURL)
+
+	err := row.Scan(&shortURL)
+
+	if err != nil {
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", nil
+		}
+
+		logger.Log.Error(err.Error())
+		return "", err
+	}
+
+	return shortURL, nil
 }
