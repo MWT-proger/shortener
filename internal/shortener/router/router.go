@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/go-chi/chi"
 
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/gzip"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
@@ -15,6 +16,7 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 
 	r.Use(logger.RequestLogger)
 	r.Use(gzip.GzipMiddleware)
+	r.Use(auth.AuthCookieMiddleware)
 
 	r.Post("/", h.GenerateShortkeyHandler)
 	r.Get("/{shortKey}", h.GetURLByKeyHandler)

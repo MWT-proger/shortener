@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -19,6 +20,7 @@ func TestGetConfig(t *testing.T) {
 			JSONFileDB:       "../../db.json",
 			LogLevel:         "info",
 			DatabaseDSN:      "",
+			Auth:             AuthConfig{TokenExp: time.Hour * 3, SecretKey: "supersecretkey"},
 		}},
 		{name: "Тест 2", want: Config{
 			HostServer:       ":7777",
@@ -26,6 +28,7 @@ func TestGetConfig(t *testing.T) {
 			JSONFileDB:       "../../dbExample.json",
 			LogLevel:         "debug",
 			DatabaseDSN:      "",
+			Auth:             AuthConfig{TokenExp: time.Hour * 3, SecretKey: "supersecretkey"},
 		}},
 	}
 	for _, tt := range tests {
@@ -50,6 +53,7 @@ func TestInitConfig(t *testing.T) {
 			JSONFileDB:       "/tmp/short-url-db.json",
 			LogLevel:         "info",
 			DatabaseDSN:      "",
+			Auth:             AuthConfig{TokenExp: time.Hour * 3, SecretKey: "supersecretkey"},
 		}},
 	}
 	for _, tt := range tests {
@@ -72,6 +76,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			LogLevel:         "info",
 			DatabaseDSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
 				`localhost`, `postgres`, `postgres`, `testDB`),
+			Auth: AuthConfig{TokenExp: time.Hour * 3, SecretKey: "NewSuperSecretKeyTEEEEEEEEEEST"},
 		}},
 	}
 	for _, tt := range tests {
@@ -81,6 +86,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			os.Setenv("LOG_LEVEL", tt.want.LogLevel)
 			os.Setenv("FILE_STORAGE_PATH", tt.want.JSONFileDB)
 			os.Setenv("DATABASE_DSN", tt.want.DatabaseDSN)
+			os.Setenv("SECRET_KEY", tt.want.Auth.SecretKey)
 			SetConfigFromEnv()
 			assert.Equal(t, newConfig, tt.want, "newConfig не совпадает с ожидаемым")
 		})
