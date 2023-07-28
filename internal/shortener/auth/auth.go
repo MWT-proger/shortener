@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"net/http"
 	"time"
 
@@ -10,16 +9,15 @@ import (
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
+	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
-type contextKey string
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID uuid.UUID
 }
 
 const NameCookie = "token"
-const UserIDKey = contextKey("UserID")
 
 // AuthCookieMiddleware(next http.Handler) http.Handler — middleware-для входящих HTTP-запросов.
 // Выдаёт пользователю симметрично подписанную куку, содержащую уникальный идентификатор пользователя,
@@ -55,7 +53,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 		}
 
 		newCookie.Value = tokenString
-		ctx = context.WithValue(ctx, UserIDKey, UserID.String())
+		ctx = request.WithUserID(ctx, UserID)
 
 		r = r.WithContext(ctx)
 		http.SetCookie(w, &newCookie)

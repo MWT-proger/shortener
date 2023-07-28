@@ -5,11 +5,12 @@ import (
 
 	"github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
+	"github.com/google/uuid"
 )
 
 type OperationStorager interface {
-	Set(fullURL string) (string, error)
-	SetMany(data []models.JSONShortURL, baseShortURL string) error
+	Set(newModel models.ShortURL) (string, error)
+	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
 	Get(shortURL string) (string, error)
 	Init(ctx context.Context) error
 	Close() error
@@ -24,13 +25,13 @@ func (s *Storage) Init(ctx context.Context) error {
 }
 
 // Абстрактный метод
-func (s *Storage) Set(fullURL string) (string, error) {
+func (s *Storage) Set(newModel models.ShortURL) (string, error) {
 	return "", nil
 
 }
 
 // Абстрактный метод
-func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 	return nil
 
 }

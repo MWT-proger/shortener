@@ -1,8 +1,11 @@
 package models
 
+import "github.com/google/uuid"
+
 type ShortURL struct {
 	ShortKey string
 	FullURL  string
+	UserID   uuid.UUID
 }
 
 type JSONShortURL struct {
@@ -18,4 +21,12 @@ func (d *JSONShortURL) IsValid() bool {
 	}
 
 	return true
+}
+
+type JSONShortenRequest struct {
+	URL string `json:"url"`
+}
+
+func (d *JSONShortenRequest) IsValid() bool {
+	return d.URL != ""
 }

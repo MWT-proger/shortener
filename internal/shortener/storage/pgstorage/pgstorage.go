@@ -6,6 +6,7 @@ import (
 	"embed"
 	"errors"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
@@ -76,10 +77,9 @@ func (s *PgStorage) Close() error {
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *PgStorage) Set(fullURL string) (string, error) {
+func (s *PgStorage) Set(newModel models.ShortURL) (string, error) {
 
 	ctx := context.Background()
-	newModel := models.ShortURL{FullURL: fullURL}
 
 	for {
 		newModel.ShortKey = utils.StringWithCharset(5)
@@ -90,7 +90,7 @@ func (s *PgStorage) Set(fullURL string) (string, error) {
 				continue
 			}
 			if errors.Is(err, &lErrors.ErrorDuplicateFullURL{}) {
-				newModel.ShortKey, _ = s.getShortKey(fullURL)
+				newModel.ShortKey, _ = s.getShortKey(newModel.FullURL)
 				return newModel.ShortKey, &lErrors.ErrorDuplicateFullURL{}
 			}
 			return "", err
@@ -104,7 +104,7 @@ func (s *PgStorage) Set(fullURL string) (string, error) {
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 
 	ctx := context.Background()
 
@@ -117,7 +117,7 @@ func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string) err
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"INSERT INTO content.shorturl (short_key, full_url) VALUES($1,$2) ON CONFLICT (short_key) DO NOTHING RETURNING short_key")
+		"INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3) ON CONFLICT (short_key) DO NOTHING RETURNING short_key")
 
 	if err != nil {
 		logger.Log.Error(err.Error())
@@ -129,7 +129,7 @@ func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string) err
 
 		shortKey := ""
 		for {
-			row := stmt.QueryRowContext(ctx, utils.StringWithCharset(5), v.OriginalURL)
+			row := stmt.QueryRowContext(ctx, utils.StringWithCharset(5), v.OriginalURL, userID)
 
 			err := row.Scan(&shortKey)
 
@@ -169,14 +169,14 @@ func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.PrepareContext(ctx,
-		"INSERT INTO content.shorturl (short_key, full_url) VALUES($1,$2)")
+		"INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3)")
 
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.ExecContext(ctx, model.ShortKey, model.FullURL)
+	_, err = stmt.ExecContext(ctx, model.ShortKey, model.FullURL, model.UserID)
 
 	if err != nil {
 		logger.Log.Error(err.Error())
