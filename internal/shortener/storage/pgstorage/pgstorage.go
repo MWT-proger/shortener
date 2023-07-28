@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"embed"
 	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -105,6 +107,7 @@ func (s *PgStorage) Set(newModel models.ShortURL) (string, error) {
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
 func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
+	var pgError *pgconn.PgError
 
 	ctx := context.Background()
 
@@ -126,9 +129,13 @@ func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string, use
 	defer stmt.Close()
 
 	for i, v := range data {
-
+		nameSavePoint := fmt.Sprintf("multy_savepoint_%s", strconv.Itoa(i))
+		tx.ExecContext(ctx, "SAVEPOINT "+nameSavePoint)
+		FullURLIsExist := false
 		shortKey := ""
+
 		for {
+
 			row := stmt.QueryRowContext(ctx, utils.StringWithCharset(5), v.OriginalURL, userID)
 
 			err := row.Scan(&shortKey)
@@ -140,13 +147,36 @@ func (s *PgStorage) SetMany(data []models.JSONShortURL, baseShortURL string, use
 					continue
 				}
 
+				if errors.As(err, &pgError); errors.Is(err, pgError) {
+					if pgError.Code == "23505" && pgError.ConstraintName == "shorturl_full_url_key" {
+						tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT "+nameSavePoint)
+						logger.Log.Debug("FullURL is exist")
+						logger.Log.Debug(err.Error())
+						FullURLIsExist = true
+						break
+					}
+				}
+
 				logger.Log.Error(err.Error())
 				return err
 			}
+
 			break
 		}
+		if FullURLIsExist {
 
+			row := tx.QueryRowContext(context.Background(),
+				"SELECT short_key "+
+					"FROM content.shorturl WHERE full_url = $1 LIMIT 1;", v.OriginalURL)
+
+			err := row.Scan(&shortKey)
+
+			if err != nil {
+				return err
+			}
+		}
 		data[i].ShortURL = baseShortURL + shortKey
+		tx.ExecContext(ctx, "RELEASE SAVEPOINT "+nameSavePoint)
 	}
 
 	if err := tx.Commit(); err != nil {
