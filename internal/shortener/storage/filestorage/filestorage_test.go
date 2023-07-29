@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/MWT-proger/shortener/internal/shortener/models"
 )
 
 func TestStorageGet(t *testing.T) {
@@ -34,11 +36,11 @@ func TestStorageSet(t *testing.T) {
 	testCases := []struct {
 		name        string
 		tempStorage map[string]string
-		value       string
+		value       models.ShortURL
 		length      int
 	}{
-		{name: "Тест 1 - Проверяем на успех", tempStorage: map[string]string{"testKey0": "testValue0"}, value: "testValue", length: 2},
-		{name: "Тест 2 - Проверяем на успех", tempStorage: map[string]string{"testKey0": "testValue0"}, value: "testValue2", length: 2},
+		{name: "Тест 1 - Проверяем на успех", tempStorage: map[string]string{"testKey0": "http://example.ru"}, value: models.ShortURL{FullURL: "http://example.ru"}, length: 2},
+		{name: "Тест 2 - Проверяем на успех", tempStorage: map[string]string{"testKey0": "http://example.ru"}, value: models.ShortURL{FullURL: "http://example.ru"}, length: 2},
 	}
 
 	for _, tt := range testCases {
@@ -48,7 +50,7 @@ func TestStorageSet(t *testing.T) {
 			}
 			got, _ := s.Set(tt.value)
 
-			assert.Equal(t, tt.value, s.tempStorage[got], "Результат не совпадает с ожиданием")
+			assert.Equal(t, tt.value.FullURL, s.tempStorage[got], "Результат не совпадает с ожиданием")
 			assert.Len(t, s.tempStorage, tt.length, "Длина словаря не совпадает")
 
 		})

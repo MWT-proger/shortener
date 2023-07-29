@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -32,11 +33,11 @@ func (s *MockStorage) Ping() error {
 func (s *MockStorage) Close() error {
 	return nil
 }
-func (s *MockStorage) Set(fullURL string) (string, error) {
-	return s.testData[fullURL], nil
+func (s *MockStorage) Set(newModel models.ShortURL) (string, error) {
+	return s.testData[newModel.FullURL], nil
 }
 
-func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 	return nil
 }
 

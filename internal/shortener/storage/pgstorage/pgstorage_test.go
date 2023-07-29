@@ -6,12 +6,14 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
+	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 func TestPgStorageGet(t *testing.T) {
@@ -79,13 +81,13 @@ func TestPgStorageDoSet(t *testing.T) {
 
 		{
 			name:        "Тест 1 - Проверяем на дубликат short_key",
-			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru"},
+			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru", UserID: uuid.New()},
 			errorsDB:    &pgconn.PgError{Code: "23505", ConstraintName: "shorturl_short_key_key"},
 			errorString: (&lErrors.ErrorDuplicateShortKey{}).Error(),
 		},
 		{
 			name:        "Тест 2 - Проверяем на успех",
-			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru"},
+			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru", UserID: uuid.New()},
 			errorsDB:    nil,
 			errorString: "",
 		},
@@ -100,7 +102,7 @@ func TestPgStorageDoSet(t *testing.T) {
 	defer db.Close()
 
 	s := &PgStorage{db: db}
-	querySQL := "INSERT INTO content.shorturl (short_key, full_url) VALUES($1,$2)"
+	querySQL := "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3)"
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
@@ -108,17 +110,18 @@ func TestPgStorageDoSet(t *testing.T) {
 			if tt.errorsDB != nil {
 				mock.ExpectBegin()
 				mock.ExpectPrepare(querySQL).ExpectExec().
-					WithArgs(tt.model.ShortKey, tt.model.FullURL).
+					WithArgs(tt.model.ShortKey, tt.model.FullURL, tt.model.UserID).
 					WillReturnError(tt.errorsDB)
 			} else {
 				mock.ExpectBegin()
 				mock.ExpectPrepare(querySQL).ExpectExec().
-					WithArgs(tt.model.ShortKey, tt.model.FullURL).
+					WithArgs(tt.model.ShortKey, tt.model.FullURL, tt.model.UserID).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 				mock.ExpectCommit()
 			}
-
-			err := s.doSet(context.TODO(), &tt.model)
+			ctx := context.TODO()
+			ctx = request.WithUserID(ctx, tt.model.UserID)
+			err := s.doSet(ctx, &tt.model)
 
 			if tt.errorString != "" {
 				assert.EqualError(t, err, tt.errorString, "Ошибка не совпадает")
