@@ -37,7 +37,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 
 		if err == nil {
 			tokenString = token.Value
-			UserID, _ = GetUserId(tokenString)
+			UserID, _ = GetUserID(tokenString)
 		}
 
 		if UserID == uuid.Nil {
@@ -84,9 +84,9 @@ func BuildJWTString(UserID uuid.UUID) (string, error) {
 	return tokenString, nil
 }
 
-// GetUserId(tokenString string) (uuid.UUID, error) Проверяет токен
+// GetUserID(tokenString string) (uuid.UUID, error) Проверяет токен
 // и в случае успеха возвращает из полезной нагрузки UserID
-func GetUserId(tokenString string) (uuid.UUID, error) {
+func GetUserID(tokenString string) (uuid.UUID, error) {
 
 	claims := &Claims{}
 	conf := configs.GetConfig()
