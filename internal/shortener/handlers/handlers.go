@@ -54,6 +54,10 @@ func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Reque
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+	if len(listURLs) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 
 	baseURL := utils.GetBaseShortURL(r.Host)
 	for _, v := range listURLs {
