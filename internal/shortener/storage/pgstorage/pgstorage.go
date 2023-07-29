@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/pressly/goose/v3"
 
 	"github.com/MWT-proger/shortener/configs"
@@ -26,13 +27,14 @@ var embedMigrations embed.FS
 
 type PgStorage struct {
 	storage.Storage
-	db *sql.DB
+	db *sqlx.DB
 }
 
 func (s *PgStorage) Init(ctx context.Context) error {
 	conf := configs.GetConfig()
 
-	db, err := sql.Open("pgx", conf.DatabaseDSN)
+	// db, err := sql.Open("pgx", conf.DatabaseDSN)
+	db, err := sqlx.Open("pgx", conf.DatabaseDSN)
 	if err != nil {
 		return err
 	}
@@ -55,7 +57,7 @@ func (s *PgStorage) Migration() error {
 		return err
 	}
 
-	if err := goose.Up(s.db, "migrations"); err != nil {
+	if err := goose.Up(s.db.DB, "migrations"); err != nil {
 		return err
 	}
 
@@ -253,6 +255,29 @@ func (s *PgStorage) Get(shortURL string) (string, error) {
 	}
 
 	return FullURL, nil
+}
+
+func (s *PgStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	var (
+		ctx       = context.Background()
+		list      = []*models.JSONShortURL{}
+		args      = map[string]interface{}{"user_id": userID}
+		stmt, err = s.db.PrepareNamedContext(ctx, "SELECT * "+
+			"FROM content.shorturl WHERE user_id = :user_id;")
+	)
+
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return nil, err
+	}
+	defer stmt.Close()
+
+	if err := stmt.SelectContext(ctx, &list, args); err != nil {
+		logger.Log.Error(err.Error())
+		return nil, err
+	}
+
+	return list, nil
 }
 
 func (s *PgStorage) getShortKey(FullURL string) (string, error) {

@@ -9,9 +9,10 @@ type ShortURL struct {
 }
 
 type JSONShortURL struct {
-	CorrelationID string `json:"correlation_id,omitempty"`
-	OriginalURL   string `json:"original_url,omitempty"`
-	ShortURL      string `json:"short_url,omitempty"`
+	CorrelationID string    `json:"correlation_id,omitempty"`
+	OriginalURL   string    `json:"original_url,omitempty" db:"full_url"`
+	ShortURL      string    `json:"short_url,omitempty" db:"short_key"`
+	UserID        uuid.UUID `json:"-" db:"user_id"`
 }
 
 func (d *JSONShortURL) IsValid() bool {

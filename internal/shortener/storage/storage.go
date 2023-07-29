@@ -12,6 +12,7 @@ type OperationStorager interface {
 	Set(newModel models.ShortURL) (string, error)
 	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
 	Get(shortURL string) (string, error)
+	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
 	Init(ctx context.Context) error
 	Close() error
 	Ping() error
@@ -39,6 +40,11 @@ func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string, userI
 // Абстрактный метод
 func (s *Storage) Get(shortURL string) (string, error) {
 	return "", nil
+}
+
+// Абстрактный метод
+func (s *Storage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	return []*models.JSONShortURL{}, nil
 }
 
 // Абстрактный метод

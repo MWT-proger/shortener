@@ -44,6 +44,9 @@ func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string, u
 func (s *MockStorage) Get(shortURL string) (string, error) {
 	return s.testData[shortURL], nil
 }
+func (s *MockStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	return []*models.JSONShortURL{}, nil
+}
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string, bodyReader *strings.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, bodyReader)

@@ -24,6 +24,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgx/v5 v5.4.2
+	github.com/jmoiron/sqlx v1.3.5
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pressly/goose/v3 v3.13.4
 	go.uber.org/zap v1.24.0

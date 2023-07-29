@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
@@ -45,8 +46,10 @@ func TestPgStorageGet(t *testing.T) {
 
 	defer db.Close()
 
+	sqlxDB := sqlx.NewDb(db, "sqlmock")
+
 	s := &PgStorage{
-		db: db,
+		db: sqlxDB,
 	}
 	querySQL := "SELECT full_url FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
 
@@ -101,7 +104,11 @@ func TestPgStorageDoSet(t *testing.T) {
 
 	defer db.Close()
 
-	s := &PgStorage{db: db}
+	sqlxDB := sqlx.NewDb(db, "sqlmock")
+
+	s := &PgStorage{
+		db: sqlxDB,
+	}
 	querySQL := "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3)"
 
 	for _, tt := range testCases {
