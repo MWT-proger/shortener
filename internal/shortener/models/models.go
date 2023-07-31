@@ -13,6 +13,7 @@ type JSONShortURL struct {
 	OriginalURL   string    `json:"original_url,omitempty" db:"full_url"`
 	ShortURL      string    `json:"short_url,omitempty" db:"short_key"`
 	UserID        uuid.UUID `json:"-" db:"user_id"`
+	DeletedFlag   bool      `json:"-" db:"is_deleted"`
 }
 
 func (d *JSONShortURL) IsValid() bool {
