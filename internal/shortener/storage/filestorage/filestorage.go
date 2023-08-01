@@ -97,14 +97,17 @@ func (s *FileStorage) Set(newModel models.ShortURL) (string, error) {
 }
 
 // Достаёт из хранилища и возвращает полную ссылку по ключу
-func (s *FileStorage) Get(shortURL string) (string, error) {
+func (s *FileStorage) Get(shortURL string) (models.ShortURL, error) {
+	var model models.ShortURL
 
 	fullURL, ok := s.tempStorage[shortURL]
 	if !ok {
-		return "", nil
+		return model, nil
 	}
 
-	return fullURL, nil
+	model.FullURL = fullURL
+
+	return model, nil
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ

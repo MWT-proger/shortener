@@ -26,7 +26,7 @@ func TestStorageGet(t *testing.T) {
 			}
 			got, _ := s.Get(tt.key)
 
-			assert.Equal(t, tt.want, got, "Результат не совпадает с ожиданием")
+			assert.Equal(t, tt.want, got.FullURL, "Результат не совпадает с ожиданием")
 
 		})
 	}

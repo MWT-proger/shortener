@@ -11,7 +11,8 @@ import (
 type OperationStorager interface {
 	Set(newModel models.ShortURL) (string, error)
 	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
-	Get(shortURL string) (string, error)
+	DeleteList(data []string, userID uuid.UUID) error
+	Get(shortURL string) (models.ShortURL, error)
 	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
 	Init(ctx context.Context) error
 	Close() error
@@ -38,8 +39,8 @@ func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string, userI
 }
 
 // Абстрактный метод
-func (s *Storage) Get(shortURL string) (string, error) {
-	return "", nil
+func (s *Storage) Get(shortURL string) (models.ShortURL, error) {
+	return models.ShortURL{}, nil
 }
 
 // Абстрактный метод
@@ -54,5 +55,9 @@ func (s *Storage) Ping() error {
 
 // Абстрактный метод
 func (s *Storage) Close() error {
+	return nil
+}
+
+func (s *Storage) DeleteList(data []string, userID uuid.UUID) error {
 	return nil
 }

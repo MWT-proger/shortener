@@ -21,20 +21,20 @@ func TestPgStorageGet(t *testing.T) {
 	testCases := []struct {
 		name     string
 		shortKey string
-		result   string
+		result   models.ShortURL
 		errors   error
 	}{
 		{
 			name:     "Тест 1 - Проверяем на успех",
 			shortKey: "testkey",
-			result:   "http://example.ru",
+			result:   models.ShortURL{FullURL: "http://example.ru"},
 			errors:   nil,
 		},
 
 		{
 			name:     "Тест 2 - Проверяем на успех",
 			shortKey: "testkey",
-			result:   "",
+			result:   models.ShortURL{FullURL: ""},
 			errors:   sql.ErrNoRows,
 		},
 	}
@@ -51,7 +51,7 @@ func TestPgStorageGet(t *testing.T) {
 	s := &PgStorage{
 		db: sqlxDB,
 	}
-	querySQL := "SELECT full_url FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
+	querySQL := "SELECT full_url, is_deleted FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestPgStorageGet(t *testing.T) {
 					WithArgs(tt.shortKey).
 					WillReturnError(tt.errors)
 			} else {
-				rows := sqlmock.NewRows([]string{"full_url"}).AddRow(tt.result)
+				rows := sqlmock.NewRows([]string{"full_url", "is_deleted"}).AddRow(tt.result.FullURL, tt.result.DeletedFlag)
 
 				mock.ExpectQuery(querySQL).
 					WithArgs(tt.shortKey).
@@ -69,7 +69,7 @@ func TestPgStorageGet(t *testing.T) {
 			}
 			got, _ := s.Get(tt.shortKey)
 
-			assert.Equal(t, got, tt.result, "Результат не совпадает с ожиданием")
+			assert.Equal(t, got.FullURL, tt.result.FullURL, "Результат не совпадает с ожиданием")
 		})
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -235,26 +236,26 @@ func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 }
 
 // Достаёт из хранилища и возвращает полную ссылку по ключу
-func (s *PgStorage) Get(shortURL string) (string, error) {
-	var FullURL string
+func (s *PgStorage) Get(shortURL string) (models.ShortURL, error) {
+	var model models.ShortURL
 
 	row := s.db.QueryRowContext(context.Background(),
-		"SELECT full_url "+
+		"SELECT full_url, is_deleted "+
 			"FROM content.shorturl WHERE short_key = $1 LIMIT 1;", shortURL)
 
-	err := row.Scan(&FullURL)
+	err := row.Scan(&model.FullURL, &model.DeletedFlag)
 
 	if err != nil {
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil
+			return model, nil
 		}
 
 		logger.Log.Error(err.Error())
-		return "", err
+		return model, err
 	}
 
-	return FullURL, nil
+	return model, nil
 }
 
 func (s *PgStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
@@ -300,4 +301,28 @@ func (s *PgStorage) getShortKey(FullURL string) (string, error) {
 	}
 
 	return shortURL, nil
+}
+
+func (s *PgStorage) DeleteList(data []string, userID uuid.UUID) error {
+	var values []string
+	var args = []any{true, userID}
+
+	for i, v := range data {
+		params := fmt.Sprintf("$%d", i+3)
+
+		values = append(values, params)
+		args = append(args, v)
+	}
+
+	query := `UPDATE content.shorturl SET is_deleted= $1 
+	WHERE user_id = $2 AND short_key IN (` + strings.Join(values, ", ") + `);`
+
+	_, err := s.db.ExecContext(context.Background(), query, args...)
+
+	if err != nil {
+		logger.Log.Error(err.Error())
+		return err
+	}
+
+	return nil
 }

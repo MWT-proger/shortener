@@ -3,9 +3,10 @@ package models
 import "github.com/google/uuid"
 
 type ShortURL struct {
-	ShortKey string
-	FullURL  string
-	UserID   uuid.UUID
+	ShortKey    string
+	FullURL     string
+	UserID      uuid.UUID
+	DeletedFlag bool
 }
 
 type JSONShortURL struct {
