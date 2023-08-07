@@ -2,17 +2,18 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
 
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
-	"github.com/go-chi/chi"
-	"go.uber.org/zap"
 )
 
 type APIHandler struct {
@@ -113,35 +114,35 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	for _, v := range data {
-		h.DeletedChan <- models.DeletedShortURL{
-			UserID:  userID,
-			Payload: v,
-		}
-	}
+	inputCh := generator(h.doneCh, data, userID)
+	channels := fanOut(h.doneCh, inputCh)
+	fanIn(h.doneCh, h.DeletedChan, channels...)
 
 	w.WriteHeader(http.StatusAccepted)
 
 }
 
-// // generator функция из предыдущего примера, делает то же, что и делала
-// func generator(doneCh chan struct{}, input []string, userID ) chan int {
-// 	inputCh := make(chan int)
+// generator функция из предыдущего примера, делает то же, что и делала
+func generator(doneCh chan struct{}, input []string, userID uuid.UUID) chan models.DeletedShortURL {
+	inputCh := make(chan models.DeletedShortURL)
 
-// 	go func() {
-// 		defer close(inputCh)
+	go func() {
+		defer close(inputCh)
 
-// 		for _, data := range input {
-// 			select {
-// 			case <-doneCh:
-// 				return
-// 			case inputCh <- data:
-// 			}
-// 		}
-// 	}()
+		for _, data := range input {
+			select {
+			case <-doneCh:
+				return
+			case inputCh <- models.DeletedShortURL{
+				UserID:  userID,
+				Payload: data,
+			}:
+			}
+		}
+	}()
 
-// 	return inputCh
-// }
+	return inputCh
+}
 
 func (h *APIHandler) FlushDeleted() {
 	// будем удалять, накопленные за последние 10 секунд
@@ -152,24 +153,48 @@ func (h *APIHandler) FlushDeleted() {
 	for {
 		select {
 		case d := <-h.DeletedChan:
-			// добавим сообщение в слайс для последующего сохранения
 			data = append(data, d)
 		case <-ticker.C:
-			// подождём, пока придёт хотя бы одно сообщение
 			if len(data) == 0 {
 				continue
 			}
-			fmt.Println("Удаление ____________")
-			fmt.Println(data)
-			// сохраним все пришедшие сообщения одновременно
 			err := h.storage.DeleteList(data...)
 			if err != nil {
 				logger.Log.Debug("cannot deleted shortURL", zap.Error(err))
-				// не будем стирать сообщения, попробуем отправить их чуть позже
 				continue
 			}
-			// сотрём успешно отосланные сообщения
 			data = nil
 		}
+	}
+}
+
+// fanOut принимает канал данных, порождает 10 горутин
+func fanOut(doneCh chan struct{}, inputCh chan models.DeletedShortURL) []chan models.DeletedShortURL {
+	numWorkers := 10
+	channels := make([]chan models.DeletedShortURL, numWorkers)
+
+	for i := 0; i < numWorkers; i++ {
+		channels[i] = inputCh
+	}
+
+	return channels
+}
+
+// fanIn объединяет несколько каналов resultChs в один.
+func fanIn(doneCh chan struct{}, finalCh chan models.DeletedShortURL, resultChs ...chan models.DeletedShortURL) {
+
+	for _, ch := range resultChs {
+		chClosure := ch
+
+		go func() {
+
+			for data := range chClosure {
+				select {
+				case <-doneCh:
+					return
+				case finalCh <- data:
+				}
+			}
+		}()
 	}
 }
