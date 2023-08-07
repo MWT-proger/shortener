@@ -132,3 +132,19 @@ func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string, u
 	return nil
 
 }
+
+// Подобие удаления
+func (s *FileStorage) DeleteList(data ...models.DeletedShortURL) error {
+
+	for _, v := range data {
+
+		_, ok := s.tempStorage[v.Payload]
+
+		if ok {
+			delete(s.tempStorage, v.Payload)
+		}
+
+	}
+
+	return nil
+}
