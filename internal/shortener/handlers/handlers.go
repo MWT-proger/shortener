@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
@@ -114,34 +113,22 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	inputCh := generator(h.doneCh, data, userID)
-	channels := fanOut(h.doneCh, inputCh)
-	fanIn(h.doneCh, h.DeletedChan, channels...)
-
-	w.WriteHeader(http.StatusAccepted)
-
-}
-
-// generator функция из предыдущего примера, делает то же, что и делала
-func generator(doneCh chan struct{}, input []string, userID uuid.UUID) chan models.DeletedShortURL {
-	inputCh := make(chan models.DeletedShortURL)
-
 	go func() {
-		defer close(inputCh)
 
-		for _, data := range input {
+		for _, d := range data {
 			select {
-			case <-doneCh:
+			case <-h.doneCh:
 				return
-			case inputCh <- models.DeletedShortURL{
+			case h.DeletedChan <- models.DeletedShortURL{
 				UserID:  userID,
-				Payload: data,
+				Payload: d,
 			}:
 			}
 		}
 	}()
 
-	return inputCh
+	w.WriteHeader(http.StatusAccepted)
+
 }
 
 func (h *APIHandler) FlushDeleted() {
@@ -165,36 +152,5 @@ func (h *APIHandler) FlushDeleted() {
 			}
 			data = nil
 		}
-	}
-}
-
-// fanOut принимает канал данных, порождает 10 горутин
-func fanOut(doneCh chan struct{}, inputCh chan models.DeletedShortURL) []chan models.DeletedShortURL {
-	numWorkers := 10
-	channels := make([]chan models.DeletedShortURL, numWorkers)
-
-	for i := 0; i < numWorkers; i++ {
-		channels[i] = inputCh
-	}
-
-	return channels
-}
-
-// fanIn объединяет несколько каналов resultChs в один.
-func fanIn(doneCh chan struct{}, finalCh chan models.DeletedShortURL, resultChs ...chan models.DeletedShortURL) {
-
-	for _, ch := range resultChs {
-		chClosure := ch
-
-		go func() {
-
-			for data := range chClosure {
-				select {
-				case <-doneCh:
-					return
-				case finalCh <- data:
-				}
-			}
-		}()
 	}
 }

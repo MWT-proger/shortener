@@ -19,7 +19,7 @@ func TestGetConfig(t *testing.T) {
 			JSONFileDB:       "../../db.json",
 			LogLevel:         "info",
 			DatabaseDSN:      "",
-			Auth:             AuthConfig{TokenExp: Year * 99, SecretKey: "supersecretkey"},
+			Auth:             AuthConfig{SecretKey: "supersecretkey"},
 		}},
 		{name: "Тест 2", want: Config{
 			HostServer:       ":7777",
@@ -27,7 +27,7 @@ func TestGetConfig(t *testing.T) {
 			JSONFileDB:       "../../dbExample.json",
 			LogLevel:         "debug",
 			DatabaseDSN:      "",
-			Auth:             AuthConfig{TokenExp: Year * 99, SecretKey: "supersecretkey"},
+			Auth:             AuthConfig{SecretKey: "supersecretkey"},
 		}},
 	}
 	for _, tt := range tests {
@@ -52,7 +52,7 @@ func TestInitConfig(t *testing.T) {
 			JSONFileDB:       "/tmp/short-url-db.json",
 			LogLevel:         "info",
 			DatabaseDSN:      "",
-			Auth:             AuthConfig{TokenExp: Year * 99, SecretKey: "supersecretkey"},
+			Auth:             AuthConfig{SecretKey: "supersecretkey"},
 		}},
 	}
 	for _, tt := range tests {
@@ -75,7 +75,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			LogLevel:         "info",
 			DatabaseDSN: fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
 				`localhost`, `postgres`, `postgres`, `testDB`),
-			Auth: AuthConfig{TokenExp: Year * 99, SecretKey: "NewSuperSecretKeyTEEEEEEEEEEST"},
+			Auth: AuthConfig{SecretKey: "NewSuperSecretKeyTEEEEEEEEEEST"},
 		}},
 	}
 	for _, tt := range tests {

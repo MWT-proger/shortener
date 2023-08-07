@@ -2,7 +2,6 @@ package auth
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
@@ -38,7 +37,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 
 		if err == nil {
 			tokenString = token.Value
-			UserID, _ = GetUserID(tokenString)
+			UserID = GetUserID(tokenString)
 		}
 
 		if UserID == uuid.Nil {
@@ -83,7 +82,7 @@ func ValidAuthCookieMiddleware(next http.Handler) http.Handler {
 
 		if err == nil {
 			tokenString = token.Value
-			UserID, _ = GetUserID(tokenString)
+			UserID = GetUserID(tokenString)
 		}
 
 		if UserID == uuid.Nil {
@@ -104,11 +103,8 @@ func BuildJWTString(UserID uuid.UUID) (string, error) {
 	conf := configs.GetConfig()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(conf.Auth.TokenExp)),
-		},
-
-		UserID: UserID,
+		RegisteredClaims: jwt.RegisteredClaims{},
+		UserID:           UserID,
 	})
 
 	tokenString, err := token.SignedString([]byte(conf.Auth.SecretKey))
@@ -122,7 +118,7 @@ func BuildJWTString(UserID uuid.UUID) (string, error) {
 
 // GetUserID(tokenString string) (uuid.UUID, error) Проверяет токен
 // и в случае успеха возвращает из полезной нагрузки UserID
-func GetUserID(tokenString string) (uuid.UUID, error) {
+func GetUserID(tokenString string) uuid.UUID {
 
 	claims := &Claims{}
 	conf := configs.GetConfig()
@@ -133,14 +129,15 @@ func GetUserID(tokenString string) (uuid.UUID, error) {
 		})
 
 	if err != nil {
-		return uuid.Nil, err
+		logger.Log.Error(err.Error())
+		return uuid.Nil
 	}
 
 	if !token.Valid {
 		logger.Log.Debug("Token is not valid")
-		return uuid.Nil, err
+		return uuid.Nil
 	}
 
 	logger.Log.Debug("Token is valid")
-	return claims.UserID, err
+	return claims.UserID
 }
