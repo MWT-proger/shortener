@@ -1,12 +1,15 @@
 package configs
 
-import "os"
+import (
+	"os"
+)
 
 type Config struct {
 	HostServer       string `env:"SERVER_ADDRESS"`
 	BaseURLShortener string `env:"BASE_URL"`
 	LogLevel         string
 	JSONFileDB       string
+	DatabaseDSN      string `env:"DATABASE_DSN"`
 }
 
 var newConfig Config
@@ -19,6 +22,7 @@ func InitConfig() *Config {
 		BaseURLShortener: "",
 		JSONFileDB:       "/tmp/short-url-db.json",
 		LogLevel:         "info",
+		DatabaseDSN:      "",
 	}
 	return &newConfig
 }
@@ -31,6 +35,7 @@ func GetConfig() Config {
 // SetConfigFromEnv() Прсваевает полям значения из ENV
 // Вызывается один раз при старте проекта
 func SetConfigFromEnv() Config {
+
 	if envBaseURLShortener := os.Getenv("SERVER_ADDRESS"); envBaseURLShortener != "" {
 		newConfig.HostServer = envBaseURLShortener
 	}
@@ -42,6 +47,9 @@ func SetConfigFromEnv() Config {
 	}
 	if envJSONFileDB := os.Getenv("FILE_STORAGE_PATH"); envJSONFileDB != "" {
 		newConfig.JSONFileDB = envJSONFileDB
+	}
+	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
+		newConfig.DatabaseDSN = envDatabaseDSN
 	}
 	return newConfig
 }

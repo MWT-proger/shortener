@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,14 +15,29 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/models"
 )
 
 type MockStorage struct {
 	testData map[string]string
 }
 
+func (s *MockStorage) Init(ctx context.Context) error {
+	return nil
+}
+func (s *MockStorage) Ping() error {
+	return nil
+}
+
+func (s *MockStorage) Close() error {
+	return nil
+}
 func (s *MockStorage) Set(fullURL string) (string, error) {
 	return s.testData[fullURL], nil
+}
+
+func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+	return nil
 }
 
 func (s *MockStorage) Get(shortURL string) (string, error) {
