@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const Year = 365 * 24 * time.Hour
+
 type AuthConfig struct {
 	TokenExp  time.Duration
 	SecretKey string
@@ -30,7 +32,7 @@ func InitConfig() *Config {
 		JSONFileDB:       "/tmp/short-url-db.json",
 		LogLevel:         "info",
 		DatabaseDSN:      "",
-		Auth:             AuthConfig{TokenExp: time.Hour * 3, SecretKey: "supersecretkey"},
+		Auth:             AuthConfig{TokenExp: Year * 99, SecretKey: "supersecretkey"},
 	}
 	return &newConfig
 }

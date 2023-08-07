@@ -29,6 +29,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 		var (
 			UserID      uuid.UUID
 			tokenString string
+			isNewCookie bool
 
 			ctx        = r.Context()
 			newCookie  = http.Cookie{Name: NameCookie}
@@ -41,22 +42,57 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 		}
 
 		if UserID == uuid.Nil {
-
+			isNewCookie = true
 			UserID = uuid.New()
 
 			tokenString, err = BuildJWTString(UserID)
 
 			if err != nil {
+				logger.Log.Error(err.Error())
 				http.Error(w, "", http.StatusInternalServerError)
 				return
 			}
 		}
 
-		newCookie.Value = tokenString
-		ctx = request.WithUserID(ctx, UserID)
+		if isNewCookie {
+			newCookie.Value = tokenString
+			http.SetCookie(w, &newCookie)
+		}
 
+		ctx = request.WithUserID(ctx, UserID)
 		r = r.WithContext(ctx)
-		http.SetCookie(w, &newCookie)
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ValidAuthCookieMiddleware(next http.Handler) http.Handler — middleware-для входящих HTTP-запросов.
+// Проверяет у пользователя куку, содержащую уникальный идентификатор пользователя,
+// если такой куки не существует или она не проходит проверку подлинности то возвращает статус неавторизованного
+func ValidAuthCookieMiddleware(next http.Handler) http.Handler {
+	// получаем Handler приведением типа http.HandlerFunc
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		var (
+			UserID      uuid.UUID
+			tokenString string
+
+			ctx        = r.Context()
+			token, err = r.Cookie(NameCookie)
+		)
+
+		if err == nil {
+			tokenString = token.Value
+			UserID, _ = GetUserID(tokenString)
+		}
+
+		if UserID == uuid.Nil {
+			http.Error(w, "", http.StatusUnauthorized)
+			return
+		}
+
+		ctx = request.WithUserID(ctx, UserID)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})

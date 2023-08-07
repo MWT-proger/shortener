@@ -37,11 +37,8 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 	}
 	newModel := models.ShortURL{FullURL: stringRequestData}
 
-	userID, ok := request.UserIDFrom(r.Context())
-	if ok {
-		newModel.UserID = userID
-	}
-
+	userID, _ := request.UserIDFrom(r.Context())
+	newModel.UserID = userID
 	shortURL, err = h.storage.Set(newModel)
 
 	if err != nil {

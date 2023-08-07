@@ -16,17 +16,25 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 
 	r.Use(logger.RequestLogger)
 	r.Use(gzip.GzipMiddleware)
-	r.Use(auth.AuthCookieMiddleware)
 
-	r.Post("/", h.GenerateShortkeyHandler)
-	r.Get("/{shortKey}", h.GetURLByKeyHandler)
+	r.Group(func(r chi.Router) {
+		r.Use(auth.AuthCookieMiddleware)
 
-	r.Get("/ping", h.PingDB)
+		r.Post("/", h.GenerateShortkeyHandler)
+		r.Get("/{shortKey}", h.GetURLByKeyHandler)
 
-	r.Get("/api/user/urls", h.GetListUserURLsHandler)
-	r.Delete("/api/user/urls", h.DeleteListUserURLsHandler)
-	r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
-	r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
+		r.Get("/ping", h.PingDB)
+
+		r.Get("/api/user/urls", h.GetListUserURLsHandler)
+		r.Delete("/api/user/urls", h.DeleteListUserURLsHandler)
+		r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
+		r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Use(auth.ValidAuthCookieMiddleware)
+		r.Get("/api/user/urls", h.GetListUserURLsHandler)
+	})
 
 	return r
 }
