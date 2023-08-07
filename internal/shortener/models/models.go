@@ -1,6 +1,8 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 type ShortURL struct {
 	ShortKey    string
@@ -32,4 +34,10 @@ type JSONShortenRequest struct {
 
 func (d *JSONShortenRequest) IsValid() bool {
 	return d.URL != ""
+}
+
+type DeletedShortURL struct {
+	ID      int64
+	UserID  uuid.UUID
+	Payload string
 }

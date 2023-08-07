@@ -47,7 +47,7 @@ func (s *MockStorage) Get(shortURL string) (models.ShortURL, error) {
 func (s *MockStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
 	return []*models.JSONShortURL{}, nil
 }
-func (s *MockStorage) DeleteList(data []string, userID uuid.UUID) error {
+func (s *MockStorage) DeleteList(data ...models.DeletedShortURL) error {
 	return nil
 }
 
@@ -93,7 +93,10 @@ func TestAPIHandlerGetURLByKeyHandler(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Get("/{shortKey}", h.GetURLByKeyHandler)
@@ -138,7 +141,10 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 			configs.SetConfigFromEnv()
 
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Post("/", h.GenerateShortkeyHandler)
@@ -195,7 +201,10 @@ func TestAPIHandlerJSONGenerateShortkeyHandler(t *testing.T) {
 			configs.SetConfigFromEnv()
 
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Post("/api/shorten", h.JSONGenerateShortkeyHandler)

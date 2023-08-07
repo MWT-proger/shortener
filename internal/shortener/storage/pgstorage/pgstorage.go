@@ -303,20 +303,20 @@ func (s *PgStorage) getShortKey(FullURL string) (string, error) {
 	return shortURL, nil
 }
 
-func (s *PgStorage) DeleteList(data []string, userID uuid.UUID) error {
+func (s *PgStorage) DeleteList(data ...models.DeletedShortURL) error {
 	var values []string
-	var args = []any{true, userID}
+	var args = []any{true}
 
 	for i, v := range data {
-		params := fmt.Sprintf("$%d", i+3)
+		base := i * 2
+		params := fmt.Sprintf("(user_id = $%d AND short_key= $%d )", base+2, base+3)
 
 		values = append(values, params)
-		args = append(args, v)
+		args = append(args, v.UserID, v.Payload)
 	}
 
-	query := `UPDATE content.shorturl SET is_deleted= $1 
-	WHERE user_id = $2 AND short_key IN (` + strings.Join(values, ", ") + `);`
-
+	query := `UPDATE content.shorturl SET is_deleted= $1 WHERE ` +
+		strings.Join(values, " OR ") + `;`
 	_, err := s.db.ExecContext(context.Background(), query, args...)
 
 	if err != nil {
