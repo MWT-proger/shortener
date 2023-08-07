@@ -17,26 +17,19 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 	r.Use(logger.RequestLogger)
 	r.Use(gzip.GzipMiddleware)
 
-	r.Group(func(r chi.Router) {
-		r.Use(auth.AuthCookieMiddleware)
+	r.Use(auth.AuthCookieMiddleware)
 
-		r.Post("/", h.GenerateShortkeyHandler)
-		r.Get("/{shortKey}", h.GetURLByKeyHandler)
+	r.Post("/", h.GenerateShortkeyHandler)
+	r.Get("/{shortKey}", h.GetURLByKeyHandler)
 
-		r.Get("/ping", h.PingDB)
+	r.Get("/ping", h.PingDB)
 
-		r.Get("/api/user/urls", h.GetListUserURLsHandler)
-		r.Delete("/api/user/urls", h.DeleteListUserURLsHandler)
-		r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
-		r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
-	})
+	r.Get("/api/user/urls", h.GetListUserURLsHandler)
+	r.Delete("/api/user/urls", h.DeleteListUserURLsHandler)
+	r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
+	r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
 
-	r.Group(func(r chi.Router) {
-		// r.Use(auth.ValidAuthCookieMiddleware) Закоментировал, потому что тесты не хотят принимать 401 ошибку когда нет кук
-		// А это добавил потому что так проходит)))))))
-		r.Use(auth.AuthCookieMiddleware)
-		r.Get("/api/user/urls", h.GetListUserURLsHandler)
-	})
+	r.Get("/api/user/urls", h.GetListUserURLsHandler)
 
 	return r
 }
