@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -32,16 +33,22 @@ func (s *MockStorage) Ping() error {
 func (s *MockStorage) Close() error {
 	return nil
 }
-func (s *MockStorage) Set(fullURL string) (string, error) {
-	return s.testData[fullURL], nil
+func (s *MockStorage) Set(newModel models.ShortURL) (string, error) {
+	return s.testData[newModel.FullURL], nil
 }
 
-func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *MockStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 	return nil
 }
 
-func (s *MockStorage) Get(shortURL string) (string, error) {
-	return s.testData[shortURL], nil
+func (s *MockStorage) Get(shortURL string) (models.ShortURL, error) {
+	return models.ShortURL{FullURL: s.testData[shortURL]}, nil
+}
+func (s *MockStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	return []*models.JSONShortURL{}, nil
+}
+func (s *MockStorage) DeleteList(data ...models.DeletedShortURL) error {
+	return nil
 }
 
 func testRequest(t *testing.T, ts *httptest.Server, method, path string, bodyReader *strings.Reader) (*http.Response, string) {
@@ -86,7 +93,10 @@ func TestAPIHandlerGetURLByKeyHandler(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Get("/{shortKey}", h.GetURLByKeyHandler)
@@ -131,7 +141,10 @@ func TestAPIHandlerGenerateShortkeyHandler(t *testing.T) {
 			configs.SetConfigFromEnv()
 
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Post("/", h.GenerateShortkeyHandler)
@@ -188,7 +201,10 @@ func TestAPIHandlerJSONGenerateShortkeyHandler(t *testing.T) {
 			configs.SetConfigFromEnv()
 
 			m := &MockStorage{testData: tt.mapKeyValue}
-			h := &APIHandler{m}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
 
 			router := chi.NewRouter()
 			router.Post("/api/shorten", h.JSONGenerateShortkeyHandler)

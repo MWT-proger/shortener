@@ -4,12 +4,17 @@ import (
 	"os"
 )
 
+type AuthConfig struct {
+	SecretKey string
+}
+
 type Config struct {
 	HostServer       string `env:"SERVER_ADDRESS"`
 	BaseURLShortener string `env:"BASE_URL"`
 	LogLevel         string
 	JSONFileDB       string
 	DatabaseDSN      string `env:"DATABASE_DSN"`
+	Auth             AuthConfig
 }
 
 var newConfig Config
@@ -23,6 +28,7 @@ func InitConfig() *Config {
 		JSONFileDB:       "/tmp/short-url-db.json",
 		LogLevel:         "info",
 		DatabaseDSN:      "",
+		Auth:             AuthConfig{SecretKey: "supersecretkey"},
 	}
 	return &newConfig
 }
@@ -50,6 +56,9 @@ func SetConfigFromEnv() Config {
 	}
 	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
 		newConfig.DatabaseDSN = envDatabaseDSN
+	}
+	if envSecretKey := os.Getenv("SECRET_KEY"); envSecretKey != "" {
+		newConfig.Auth.SecretKey = envSecretKey
 	}
 	return newConfig
 }

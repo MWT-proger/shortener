@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
@@ -77,36 +79,39 @@ func (s *FileStorage) BackupToJSONFile(ctx context.Context) error {
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *FileStorage) Set(fullURL string) (string, error) {
+func (s *FileStorage) Set(newModel models.ShortURL) (string, error) {
 
-	shortURL := utils.StringWithCharset(5)
+	newModel.ShortKey = utils.StringWithCharset(5)
 
 	for {
-		_, ok := s.tempStorage[shortURL]
+		_, ok := s.tempStorage[newModel.ShortKey]
 		if !ok {
-			s.tempStorage[shortURL] = fullURL
+			s.tempStorage[newModel.ShortKey] = newModel.FullURL
 			break
 		}
-		shortURL = utils.StringWithCharset(5)
+		newModel.ShortKey = utils.StringWithCharset(5)
 	}
 
-	return shortURL, nil
+	return newModel.ShortKey, nil
 
 }
 
 // Достаёт из хранилища и возвращает полную ссылку по ключу
-func (s *FileStorage) Get(shortURL string) (string, error) {
+func (s *FileStorage) Get(shortURL string) (models.ShortURL, error) {
+	var model models.ShortURL
 
 	fullURL, ok := s.tempStorage[shortURL]
 	if !ok {
-		return "", nil
+		return model, nil
 	}
 
-	return fullURL, nil
+	model.FullURL = fullURL
+
+	return model, nil
 }
 
 // Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 
 	for i, v := range data {
 
@@ -126,4 +131,20 @@ func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string) e
 
 	return nil
 
+}
+
+// Подобие удаления
+func (s *FileStorage) DeleteList(data ...models.DeletedShortURL) error {
+
+	for _, v := range data {
+
+		_, ok := s.tempStorage[v.Payload]
+
+		if ok {
+			delete(s.tempStorage, v.Payload)
+		}
+
+	}
+
+	return nil
 }

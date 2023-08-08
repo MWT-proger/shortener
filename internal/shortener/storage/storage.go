@@ -5,12 +5,15 @@ import (
 
 	"github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
+	"github.com/google/uuid"
 )
 
 type OperationStorager interface {
-	Set(fullURL string) (string, error)
-	SetMany(data []models.JSONShortURL, baseShortURL string) error
-	Get(shortURL string) (string, error)
+	Set(newModel models.ShortURL) (string, error)
+	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
+	DeleteList(data ...models.DeletedShortURL) error
+	Get(shortURL string) (models.ShortURL, error)
+	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
 	Init(ctx context.Context) error
 	Close() error
 	Ping() error
@@ -24,20 +27,25 @@ func (s *Storage) Init(ctx context.Context) error {
 }
 
 // Абстрактный метод
-func (s *Storage) Set(fullURL string) (string, error) {
+func (s *Storage) Set(newModel models.ShortURL) (string, error) {
 	return "", nil
 
 }
 
 // Абстрактный метод
-func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string) error {
+func (s *Storage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 	return nil
 
 }
 
 // Абстрактный метод
-func (s *Storage) Get(shortURL string) (string, error) {
-	return "", nil
+func (s *Storage) Get(shortURL string) (models.ShortURL, error) {
+	return models.ShortURL{}, nil
+}
+
+// Абстрактный метод
+func (s *Storage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	return []*models.JSONShortURL{}, nil
 }
 
 // Абстрактный метод
@@ -47,5 +55,9 @@ func (s *Storage) Ping() error {
 
 // Абстрактный метод
 func (s *Storage) Close() error {
+	return nil
+}
+
+func (s *Storage) DeleteList(data ...models.DeletedShortURL) error {
 	return nil
 }
