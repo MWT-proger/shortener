@@ -1,32 +1,43 @@
-# go-musthave-shortener-tpl
+# Shortener - Сервис сокращения URL
 
-Шаблон репозитория для трека «Сервис сокращения URL».
 
-## Начало работы
+
+## Развертывание проекта
 
 1. Склонируйте репозиторий в любую подходящую директорию на вашем компьютере.
-2. В корне репозитория выполните команду `go mod init <name>` (где `<name>` — адрес вашего репозитория на GitHub без префикса `https://`) для создания модуля.
 
-## Обновление шаблона
-
-Чтобы иметь возможность получать обновления автотестов и других частей шаблона, выполните команду:
-
-```
-git remote add -m main template https://github.com/Yandex-Practicum/go-musthave-shortener-tpl.git
+```bash
+git clone https://github.com/MWT-proger/shortener.git
 ```
 
-Для обновления кода автотестов выполните команду:
+
+2. Скопируйте шаблон файла с переменным окружения
+
+```bash
+  cp deployments/.env.example deployments/.env
+```
+
+3. Укажите верные переменные окружения в только что созданный файл [.env](deployments/.env)
+
+*Доступны следующие переменные*
+```bash
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=testDB
+POSTGRES_PORT=5432
+```
+4. Запустите БД Postgres следующей командой
+
+```bash
+  docker compose -f deployments/docker-compose.yaml --env-file deployments/.env up -d
+```
+
+5. Запустите cервис сокращения URL
 
 ```
-git fetch template && git checkout template/main .github
+go run ./cmd/shortener -a "localhost:7000" -d "user=postgres password=postgres host=localhost port=5432 dbname=testDB sslmode=disable" -l debug
 ```
 
-Затем добавьте полученные изменения в свой репозиторий.
-
-## Запуск автотестов
-
-Для успешного запуска автотестов называйте ветки `iter<number>`, где `<number>` — порядковый номер инкремента. Например, в ветке с названием `iter4` запустятся автотесты для инкрементов с первого по четвёртый.
-
-При мёрже ветки с инкрементом в основную ветку `main` будут запускаться все автотесты.
-
-Подробнее про локальный и автоматический запуск читайте в [README автотестов](https://github.com/Yandex-Practicum/go-autotests).
+________________________________________________
+- [Подробней по автотестам](docs/auto_tests.md)
+- [launch.json для vscode](docs/vscode.md)
