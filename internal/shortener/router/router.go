@@ -22,14 +22,13 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 	r.Post("/", h.GenerateShortkeyHandler)
 	r.Get("/{shortKey}", h.GetURLByKeyHandler)
 
-	r.Get("/ping", h.PingDB)
-
 	r.Get("/api/user/urls", h.GetListUserURLsHandler)
 	r.Delete("/api/user/urls", h.DeleteListUserURLsHandler)
+
 	r.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
 	r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
 
-	r.Get("/api/user/urls", h.GetListUserURLsHandler)
+	r.Get("/ping", h.PingDB)
 
 	return r
 }
