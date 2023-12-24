@@ -34,3 +34,4 @@ cmd/test/server.log
 deployments/.env
 cmd/example/*
 __debug_*
+shortener

@@ -38,6 +38,21 @@ POSTGRES_PORT=5432
 go run ./cmd/shortener -a "localhost:7000" -d "user=postgres password=postgres host=localhost port=5432 dbname=testDB sslmode=disable" -l debug
 ```
 
+## Тестирование проекта
+
+1. Benchmark 
+
+```bash
+go tool pprof -http=":9090" -seconds=30 http://localhost:7000/debug/pprof/profile 
+```
+
+```bash
+go build ./cmd/
+go tool pprof shortener -seconds=30 http://localhost:7000/debug/pprof/profile 
+go test  -bench=. -cpuprofile=cpu.out -coverpkg=./../../...
+```
+
+
 ________________________________________________
 - [Подробней по автотестам](docs/auto_tests.md)
 - [launch.json для vscode](docs/vscode.md)

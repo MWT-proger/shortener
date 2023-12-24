@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 
+	_ "net/http/pprof"
+
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
