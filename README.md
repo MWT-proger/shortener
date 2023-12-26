@@ -53,9 +53,12 @@ go test  -bench=. -cpuprofile=cpu.out -coverpkg=./../../...
 
 go test -bench=. -memprofile=base.out
 go tool pprof -http=":9090" bench.test base.out 
+goimports -local "github.com/MWT-proger/shortener" -w main.go 
 ```
 
 
 ________________________________________________
 - [Подробней по автотестам](docs/auto_tests.md)
 - [launch.json для vscode](docs/vscode.md)
+
+
