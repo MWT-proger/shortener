@@ -8,6 +8,7 @@ import (
 	"github.com/MWT-proger/shortener/configs"
 )
 
+// const Charset - набор символов для генерации строки
 const Charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var seededRand *rand.Rand = rand.New(

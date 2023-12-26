@@ -31,12 +31,14 @@ import (
 // @Tag.name Short
 // @Tag.description "API сокращения и получения ссылок"
 
+// APIHandler Структура объеденяющая все эндпоинты
 type APIHandler struct {
 	storage     storage.OperationStorager
 	DeletedChan chan models.DeletedShortURL
 	doneCh      chan struct{}
 }
 
+// NewAPIHandler
 func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
 	hh := &APIHandler{
 		storage:     s,
@@ -153,6 +155,7 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 
 }
 
+// FlushDeleted запускается в горутине и удаляет ссылки
 func (h *APIHandler) FlushDeleted() {
 	// будем удалять, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)

@@ -11,11 +11,14 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
+// Claims сущность пользователя
+// BUG(Андрей): мб можно сделать приватным
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID uuid.UUID
 }
 
+// константа NameCookie - ключ в cookie для токена авторизации
 const NameCookie = "token"
 
 // AuthCookieMiddleware(next http.Handler) http.Handler — middleware-для входящих HTTP-запросов.

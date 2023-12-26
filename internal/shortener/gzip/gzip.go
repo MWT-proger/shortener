@@ -16,6 +16,7 @@ type compressWriter struct {
 	compressable bool
 }
 
+// new
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	return &compressWriter{
 		w:            w,
@@ -25,14 +26,17 @@ func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	}
 }
 
+// Header
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// Write
 func (c *compressWriter) Write(p []byte) (int, error) {
 	return c.writer().Write(p)
 }
 
+// WriteHeader
 func (c *compressWriter) WriteHeader(statusCode int) {
 
 	contentType := c.w.Header().Get("Content-Type")
@@ -81,10 +85,12 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
+// BUG(Андрей): мб можно сделать приватным
 func (c compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// BUG(Андрей): мб можно сделать приватным
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
@@ -92,6 +98,7 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// GzipMiddleware - сжимает при необходимости запросы
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var ow http.ResponseWriter

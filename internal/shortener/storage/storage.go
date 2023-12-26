@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// OperationStorager общее представление хранилища
 type OperationStorager interface {
 	Set(newModel models.ShortURL) (string, error)
 	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
@@ -19,6 +20,7 @@ type OperationStorager interface {
 	Ping() error
 }
 
+// Storage базовое хранилище
 type Storage struct{}
 
 // Абстрактный метод
@@ -58,6 +60,7 @@ func (s *Storage) Close() error {
 	return nil
 }
 
+// Абстрактный метод
 func (s *Storage) DeleteList(data ...models.DeletedShortURL) error {
 	return nil
 }
