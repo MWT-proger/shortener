@@ -1,0 +1,51 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Сервис сокращения ссылок.",
+        "title": "Shortener API",
+        "contact": {
+            "email": "support@localhost.ru"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:7000",
+    "basePath": "/",
+    "paths": {
+        "/{shortKey}": {
+            "get": {
+                "tags": [
+                    "Short"
+                ],
+                "summary": "Получить полный url по ключу",
+                "operationId": "GetURLByKeyHandler",
+                "responses": {
+                    "307": {
+                        "description": "Temporary Redirect",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "token",
+            "in": "cookie"
+        }
+    },
+    "tags": [
+        {
+            "description": "\"API сокращения и получения ссылок\"",
+            "name": "Short"
+        }
+    ]
+}

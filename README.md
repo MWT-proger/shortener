@@ -61,4 +61,5 @@ ________________________________________________
 - [Подробней по автотестам](docs/auto_tests.md)
 - [launch.json для vscode](docs/vscode.md)
 
-
+export PATH=$(go env GOPATH)/bin:$PATH
+swag init -g internal/shortener/handlers/handlers.go -o ./docs

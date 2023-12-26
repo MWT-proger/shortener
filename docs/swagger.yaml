@@ -1,0 +1,33 @@
+basePath: /
+host: localhost:7000
+info:
+  contact:
+    email: support@localhost.ru
+  description: Сервис сокращения ссылок.
+  title: Shortener API
+  version: "1.0"
+paths:
+  /{shortKey}:
+    get:
+      operationId: GetURLByKeyHandler
+      responses:
+        "307":
+          description: Temporary Redirect
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Получить полный url по ключу
+      tags:
+      - Short
+securityDefinitions:
+  ApiKeyAuth:
+    in: cookie
+    name: token
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: '"API сокращения и получения ссылок"'
+  name: Short
