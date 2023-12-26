@@ -289,7 +289,8 @@ func BenchmarkAPIHandlerGetURLByKeyHandler(b *testing.B) {
 			ts := httptest.NewServer(router)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				benchmarkRequest(b, ts, tt.method, tt.URL, strings.NewReader(""))
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, strings.NewReader(""))
+				defer result.Body.Close()
 			}
 
 		})
@@ -331,7 +332,8 @@ func BenchmarkAPIHandlerGenerateShortkeyHandler(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				defer result.Body.Close()
 			}
 
 		})
@@ -373,7 +375,8 @@ func BenchmarkAPIHandlerJSONGenerateShortkeyHandler(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				defer result.Body.Close()
 			}
 		})
 	}

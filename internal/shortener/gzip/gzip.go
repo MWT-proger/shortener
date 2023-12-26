@@ -3,7 +3,6 @@ package gzip
 import (
 	"compress/gzip"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -95,21 +94,21 @@ func (c *compressReader) Close() error {
 
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ow := w
-
+		var ow http.ResponseWriter
 		acceptEncoding := r.Header.Get("Accept-Encoding")
 		supportsGzip := strings.Contains(acceptEncoding, "gzip")
-		log.Println(supportsGzip)
+
 		if supportsGzip {
 
 			cw := newCompressWriter(w)
 			ow = cw
 			defer cw.Close()
+		} else {
+			ow = w
 		}
 
 		contentEncoding := r.Header.Get("Content-Encoding")
-		sendsGzip := strings.Contains(contentEncoding, "gzip")
-		if sendsGzip {
+		if strings.Contains(contentEncoding, "gzip") {
 
 			cr, err := newCompressReader(r.Body)
 			if err != nil {

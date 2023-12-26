@@ -50,6 +50,9 @@ go tool pprof -http=":9090" -seconds=30 http://localhost:7000/debug/pprof/profil
 go build ./cmd/
 go tool pprof shortener -seconds=30 http://localhost:7000/debug/pprof/profile 
 go test  -bench=. -cpuprofile=cpu.out -coverpkg=./../../...
+
+go test -bench=. -memprofile=base.out
+go tool pprof -http=":9090" bench.test base.out 
 ```
 
 
