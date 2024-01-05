@@ -15,6 +15,7 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
+// FileStorage хранит в json файле
 type FileStorage struct {
 	storage.Storage
 	tempStorage map[string]string

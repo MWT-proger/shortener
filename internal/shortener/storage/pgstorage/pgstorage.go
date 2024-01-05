@@ -26,11 +26,13 @@ import (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
+// PgStorage хранит в Postgres
 type PgStorage struct {
 	storage.Storage
 	db *sqlx.DB
 }
 
+// Init инициализирует хранилище
 func (s *PgStorage) Init(ctx context.Context) error {
 	conf := configs.GetConfig()
 
@@ -65,6 +67,7 @@ func (s *PgStorage) Migration() error {
 	return nil
 }
 
+// Ping Прверяет соединение
 func (s *PgStorage) Ping() error {
 	if err := s.db.Ping(); err != nil {
 		return err
@@ -73,6 +76,7 @@ func (s *PgStorage) Ping() error {
 	return nil
 }
 
+// Close Закрывает соединение
 func (s *PgStorage) Close() error {
 	if err := s.db.Close(); err != nil {
 		return err
@@ -258,6 +262,7 @@ func (s *PgStorage) Get(shortURL string) (models.ShortURL, error) {
 	return model, nil
 }
 
+// GetList достает список url users
 func (s *PgStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
 	var (
 		ctx       = context.Background()
@@ -281,6 +286,7 @@ func (s *PgStorage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
 	return list, nil
 }
 
+// getShortKey получает короткий url по полному
 func (s *PgStorage) getShortKey(FullURL string) (string, error) {
 	var shortURL string
 
@@ -303,6 +309,7 @@ func (s *PgStorage) getShortKey(FullURL string) (string, error) {
 	return shortURL, nil
 }
 
+// DeleteList удаляет список коротких ссылок пользователя
 func (s *PgStorage) DeleteList(data ...models.DeletedShortURL) error {
 	var values []string
 	var args = []any{true}

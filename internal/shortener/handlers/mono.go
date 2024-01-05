@@ -12,6 +12,7 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
+// JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler
 type JSONShortenResponse struct {
 	Result string `json:"result"`
 }

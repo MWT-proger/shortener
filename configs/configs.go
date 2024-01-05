@@ -4,10 +4,12 @@ import (
 	"os"
 )
 
+// AuthConfig Конфигурация авторизации
 type AuthConfig struct {
 	SecretKey string
 }
 
+// onfig Общая конфигурация сервиса
 type Config struct {
 	HostServer       string `env:"SERVER_ADDRESS"`
 	BaseURLShortener string `env:"BASE_URL"`

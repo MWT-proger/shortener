@@ -51,6 +51,35 @@ func (s *MockStorage) DeleteList(data ...models.DeletedShortURL) error {
 	return nil
 }
 
+func benchmarkRequest(b *testing.B, ts *httptest.Server, method, path string, bodyReader *strings.Reader) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, bodyReader)
+
+	if err != nil {
+		return nil, ""
+	}
+
+	client := ts.Client()
+	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return nil, ""
+	}
+
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return nil, ""
+	}
+
+	return resp, string(respBody)
+}
+
 func testRequest(t *testing.T, ts *httptest.Server, method, path string, bodyReader *strings.Reader) (*http.Response, string) {
 	req, err := http.NewRequest(method, ts.URL+path, bodyReader)
 	require.NoError(t, err)
@@ -228,6 +257,127 @@ func TestAPIHandlerJSONGenerateShortkeyHandler(t *testing.T) {
 
 			}
 
+		})
+	}
+
+}
+
+func BenchmarkAPIHandlerGetURLByKeyHandler(b *testing.B) {
+
+	testCases := []struct {
+		name             string
+		method           string
+		URL              string
+		mapKeyValue      map[string]string
+		expectedCode     int
+		expectedLocation string
+	}{
+		{name: "Тест 1 - Успешный ответ", URL: "/testKey", mapKeyValue: map[string]string{"testKey": "https://practicum.yandex.ru/"}, method: http.MethodGet, expectedCode: http.StatusTemporaryRedirect, expectedLocation: "https://practicum.yandex.ru/"},
+	}
+
+	for _, tt := range testCases {
+		b.Run(tt.name, func(b *testing.B) {
+			m := &MockStorage{testData: tt.mapKeyValue}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
+
+			router := chi.NewRouter()
+			router.Get("/{shortKey}", h.GetURLByKeyHandler)
+
+			ts := httptest.NewServer(router)
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, strings.NewReader(""))
+				defer result.Body.Close()
+			}
+
+		})
+	}
+}
+
+func BenchmarkAPIHandlerGenerateShortkeyHandler(b *testing.B) {
+
+	testCases := []struct {
+		name         string
+		method       string
+		URL          string
+		key          string
+		mapKeyValue  map[string]string
+		expectedCode int
+		expectedBody string
+		envBaseURL   string
+	}{
+		{name: "Тест 2 - Успешный запрос", URL: "/", key: "http://example-full-url.com", mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: "%v%v/testKey", envBaseURL: ""},
+	}
+
+	for _, tt := range testCases {
+		b.Run(tt.name, func(b *testing.B) {
+
+			configs.InitConfig()
+			configs.SetConfigFromEnv()
+
+			m := &MockStorage{testData: tt.mapKeyValue}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
+
+			router := chi.NewRouter()
+			router.Post("/", h.GenerateShortkeyHandler)
+
+			ts := httptest.NewServer(router)
+			bodyRequest := strings.NewReader(tt.key)
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				defer result.Body.Close()
+			}
+
+		})
+	}
+}
+
+func BenchmarkAPIHandlerJSONGenerateShortkeyHandler(b *testing.B) {
+
+	testCases := []struct {
+		name         string
+		method       string
+		URL          string
+		requestData  string
+		mapKeyValue  map[string]string
+		expectedCode int
+		expectedBody string
+		envBaseURL   string
+	}{
+		{name: "Тест 2 - Успешный запрос", URL: "/api/shorten", requestData: `{"url": "http://example-full-url.com"}`, mapKeyValue: map[string]string{"http://example-full-url.com": "testKey"}, method: http.MethodPost, expectedCode: http.StatusCreated, expectedBody: `{"result": "%v%v/testKey"}`, envBaseURL: ""},
+	}
+
+	for _, tt := range testCases {
+		b.Run(tt.name, func(b *testing.B) {
+			configs.InitConfig()
+
+			m := &MockStorage{testData: tt.mapKeyValue}
+			h := &APIHandler{
+				storage:     m,
+				DeletedChan: make(chan models.DeletedShortURL, 1024),
+			}
+
+			router := chi.NewRouter()
+			router.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
+
+			ts := httptest.NewServer(router)
+
+			bodyRequest := strings.NewReader(tt.requestData)
+
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				result, _ := benchmarkRequest(b, ts, tt.method, tt.URL, bodyRequest)
+				defer result.Body.Close()
+			}
 		})
 	}
 

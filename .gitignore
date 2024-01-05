@@ -32,3 +32,6 @@ cmd/test/info.log
 cmd/test/main.go
 cmd/test/server.log
 deployments/.env
+cmd/example/*
+__debug_*
+shortener

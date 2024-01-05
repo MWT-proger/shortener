@@ -15,12 +15,30 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
+// @Title Shortener API
+// @Description Сервис сокращения ссылок.
+// @Version 1.0
+
+// @Contact.email support@localhost.ru
+
+// @BasePath /
+// @Host localhost:7000
+
+// @SecurityDefinitions.apikey ApiKeyAuth
+// @In cookie
+// @Name token
+
+// @Tag.name Short
+// @Tag.description "API сокращения и получения ссылок"
+
+// APIHandler Структура объеденяющая все эндпоинты
 type APIHandler struct {
 	storage     storage.OperationStorager
 	DeletedChan chan models.DeletedShortURL
 	doneCh      chan struct{}
 }
 
+// NewAPIHandler
 func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
 	hh := &APIHandler{
 		storage:     s,
@@ -33,7 +51,13 @@ func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
 	return hh, err
 }
 
-// GetURLByKeyHandler Возвращает по ключу длинный URL
+// GetURLByKeyHandler godoc
+// @Tags Short
+// @Summary Получить полный url по ключу
+// @ID GetURLByKeyHandler
+// @Success 307 {string} string
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router /{shortKey} [get]
 func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	modelData, err := h.storage.Get(chi.URLParam(r, "shortKey"))
@@ -131,6 +155,7 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 
 }
 
+// FlushDeleted запускается в горутине и удаляет ссылки
 func (h *APIHandler) FlushDeleted() {
 	// будем удалять, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)
