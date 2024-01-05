@@ -2,17 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 
-	"github.com/MWT-proger/shortener/internal/shortener/logger"
+	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
-	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
 // @Title Shortener API
@@ -33,22 +32,25 @@ import (
 
 // APIHandler Структура объеденяющая все эндпоинты
 type APIHandler struct {
-	storage     storage.OperationStorager
-	DeletedChan chan models.DeletedShortURL
-	doneCh      chan struct{}
+	storage storage.OperationStorager
+
+	shortService ShortenerServicer
 }
 
 // NewAPIHandler
-func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
+func NewAPIHandler(s storage.OperationStorager, ss ShortenerServicer) (h *APIHandler, err error) {
 	hh := &APIHandler{
-		storage:     s,
-		DeletedChan: make(chan models.DeletedShortURL, 1024),
-		doneCh:      make(chan struct{}),
+		storage:      s,
+		shortService: ss,
 	}
 
-	go hh.FlushDeleted()
-
 	return hh, err
+}
+
+type ShortenerServicer interface {
+	GetFullURLByShortKey(shortKey string) (string, error)
+	GetListUserURLs(userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
+	DeleteListUserURLsHandler(userID uuid.UUID, data []string)
 }
 
 // GetURLByKeyHandler godoc
@@ -60,21 +62,14 @@ func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
 // @Router /{shortKey} [get]
 func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
 
-	modelData, err := h.storage.Get(chi.URLParam(r, "shortKey"))
+	fullURL, err := h.shortService.GetFullURLByShortKey(chi.URLParam(r, "shortKey"))
 
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
+		h.setHTTPError(w, err)
 		return
 	}
-	if modelData.DeletedFlag {
-		w.WriteHeader(http.StatusGone)
-		return
-	}
-	if modelData.FullURL == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Location", modelData.FullURL)
+
+	w.Header().Set("Location", fullURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 
 }
@@ -89,23 +84,15 @@ func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	listURLs, err := h.storage.GetList(userID)
+	listURLs, err := h.shortService.GetListUserURLs(userID, r.Host)
 
 	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
+		h.setHTTPError(w, err)
 		return
-	}
-	if len(listURLs) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	baseURL := utils.GetBaseShortURL(r.Host)
-	for _, v := range listURLs {
-		v.ShortURL = baseURL + v.ShortURL
 	}
 
 	resp, err := json.Marshal(listURLs)
+
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
@@ -137,45 +124,19 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	go func() {
-
-		for _, d := range data {
-			select {
-			case <-h.doneCh:
-				return
-			case h.DeletedChan <- models.DeletedShortURL{
-				UserID:  userID,
-				Payload: d,
-			}:
-			}
-		}
-	}()
+	h.shortService.DeleteListUserURLsHandler(userID, data)
 
 	w.WriteHeader(http.StatusAccepted)
 
 }
 
-// FlushDeleted запускается в горутине и удаляет ссылки
-func (h *APIHandler) FlushDeleted() {
-	// будем удалять, накопленные за последние 10 секунд
-	ticker := time.NewTicker(10 * time.Second)
-
-	var data []models.DeletedShortURL
-
-	for {
-		select {
-		case d := <-h.DeletedChan:
-			data = append(data, d)
-		case <-ticker.C:
-			if len(data) == 0 {
-				continue
-			}
-			err := h.storage.DeleteList(data...)
-			if err != nil {
-				logger.Log.Debug("cannot deleted shortURL", zap.Error(err))
-				continue
-			}
-			data = nil
-		}
+// setHTTPError(w http.ResponseWriter, err error) присваивает response статус ответа
+// вынесен для исключения дублирования в коде
+func (h *APIHandler) setHTTPError(w http.ResponseWriter, err error) {
+	var serviceError *lErrors.ServicesError
+	if errors.As(err, &serviceError) {
+		http.Error(w, serviceError.Error(), serviceError.HTTPCode)
+	} else {
+		http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
 	}
 }

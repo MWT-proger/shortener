@@ -8,6 +8,7 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
+	"github.com/MWT-proger/shortener/internal/shortener/services"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/MWT-proger/shortener/internal/shortener/storage/filestorage"
 	"github.com/MWT-proger/shortener/internal/shortener/storage/pgstorage"
@@ -63,7 +64,9 @@ func run(ctx context.Context) error {
 
 	defer s.Close()
 
-	h, _ := handlers.NewAPIHandler(s)
+	service := services.NewShortenerService(s)
+
+	h, _ := handlers.NewAPIHandler(s, service)
 	r := router.Router(h)
 
 	err = server.Run(r)
