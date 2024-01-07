@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/google/uuid"
 
-	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
@@ -26,7 +24,6 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 		data            models.JSONShortenRequest
 		responseData    JSONShortenResponse
 		finalStatusCode = http.StatusCreated
-		serviceError    *lErrors.ServicesError
 	)
 
 	defer r.Body.Close()
@@ -51,21 +48,10 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 	shortURL, err := h.shortService.GenerateShortURL(userID, data.URL, r.Host)
 
 	if err != nil {
-
-		if errors.As(err, &serviceError) {
-
-			if serviceError.ContentType != "" {
-				finalStatusCode = http.StatusConflict
-			} else {
-				http.Error(w, serviceError.Error(), serviceError.HTTPCode)
-				return
-			}
-
-		} else {
-			http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
+		finalStatusCode = h.setOrGetHTTPCode(w, err)
+		if finalStatusCode == 0 {
 			return
 		}
-
 	}
 
 	responseData.Result = shortURL

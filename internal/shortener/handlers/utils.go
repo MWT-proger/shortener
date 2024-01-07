@@ -38,3 +38,21 @@ func (h *APIHandler) setHTTPError(w http.ResponseWriter, err error) {
 		http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
 	}
 }
+
+func (h *APIHandler) setOrGetHTTPCode(w http.ResponseWriter, err error) int {
+	var serviceError *lErrors.ServicesError
+
+	if errors.As(err, &serviceError) {
+
+		if !serviceError.IsReturn {
+			return serviceError.HTTPCode
+		} else {
+			http.Error(w, serviceError.Error(), serviceError.HTTPCode)
+			return 0
+		}
+
+	} else {
+		http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
+		return 0
+	}
+}
