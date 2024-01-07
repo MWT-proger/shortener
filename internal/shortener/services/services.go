@@ -52,11 +52,11 @@ func (s *ShortenerService) GenerateShortURL(userID uuid.UUID, fullURL string, re
 
 	if err != nil {
 
-		if errors.Is(err, lErrors.ErrorDuplicateFullURLServicesError) {
-			responseErr = lErrors.ErrorDuplicateFullURLServicesError
+		if !errors.Is(err, lErrors.ErrorDuplicateFullURLServicesError) {
+			return "", lErrors.InternalServicesError
 		}
+		responseErr = lErrors.ErrorDuplicateFullURLServicesError
 
-		return "", lErrors.InternalServicesError
 	}
 	shortURL := utils.GetBaseShortURL(requestHost) + shortKey
 
