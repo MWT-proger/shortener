@@ -98,9 +98,9 @@ func (s *PgStorage) Set(newModel models.ShortURL) (string, error) {
 			if errors.Is(err, &lErrors.ErrorDuplicateShortKey{}) {
 				continue
 			}
-			if errors.Is(err, &lErrors.ErrorDuplicateFullURL{}) {
+			if errors.Is(err, lErrors.ErrorDuplicateFullURLServicesError) {
 				newModel.ShortKey, _ = s.getShortKey(newModel.FullURL)
-				return newModel.ShortKey, &lErrors.ErrorDuplicateFullURL{}
+				return newModel.ShortKey, lErrors.ErrorDuplicateFullURLServicesError
 			}
 			return "", err
 
@@ -224,7 +224,7 @@ func (s *PgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 				return &lErrors.ErrorDuplicateShortKey{}
 			}
 			if pgError.Code == "23505" && pgError.ConstraintName == "shorturl_full_url_key" {
-				return &lErrors.ErrorDuplicateFullURL{}
+				return lErrors.ErrorDuplicateFullURLServicesError
 			}
 		}
 

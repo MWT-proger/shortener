@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -51,6 +51,64 @@ type ShortenerServicer interface {
 	GetFullURLByShortKey(shortKey string) (string, error)
 	GetListUserURLs(userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
 	DeleteListUserURLsHandler(userID uuid.UUID, data []string)
+	GenerateShortURL(userID uuid.UUID, fullURL string, requestHost string) (string, error)
+}
+
+// GenerateShortkeyHandler Принимает большой URL и возвращает маленький
+func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
+
+	var (
+		finalStatusCode = http.StatusCreated
+		serviceError    *lErrors.ServicesError
+	)
+
+	defer r.Body.Close()
+
+	requestData, err := io.ReadAll((r.Body))
+
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	stringRequestData := string(requestData)
+
+	if stringRequestData == "" {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	userID, ok := request.UserIDFrom(r.Context())
+
+	if !ok {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(userID, stringRequestData, r.Host)
+
+	if err != nil {
+
+		if errors.As(err, &serviceError) {
+
+			if serviceError.ContentType != "" {
+				finalStatusCode = http.StatusConflict
+			} else {
+				http.Error(w, serviceError.Error(), serviceError.HTTPCode)
+				return
+			}
+
+		} else {
+			http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
+			return
+		}
+
+	}
+
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(finalStatusCode)
+	w.Write([]byte(shortURL))
+
 }
 
 // GetURLByKeyHandler godoc
@@ -72,71 +130,4 @@ func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Location", fullURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 
-}
-
-// GetURLByKeyHandler Возвращает список URL-адресов пользователя
-func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-
-	userID, ok := request.UserIDFrom(r.Context())
-
-	if !ok {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	listURLs, err := h.shortService.GetListUserURLs(userID, r.Host)
-
-	if err != nil {
-		h.setHTTPError(w, err)
-		return
-	}
-
-	resp, err := json.Marshal(listURLs)
-
-	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-
-}
-
-// DeleteListUserURLsHandler  в теле запроса принимает
-// список идентификаторов сокращённых URL для асинхронного удаления
-// В случае успешного приёма запроса возвращает HTTP-статус 202 Accepted
-func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-
-	userID, ok := request.UserIDFrom(r.Context())
-
-	if !ok {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-	var data []string
-
-	defer r.Body.Close()
-
-	if err := h.unmarshalBody(r.Body, &data); err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-
-	h.shortService.DeleteListUserURLsHandler(userID, data)
-
-	w.WriteHeader(http.StatusAccepted)
-
-}
-
-// setHTTPError(w http.ResponseWriter, err error) присваивает response статус ответа
-// вынесен для исключения дублирования в коде
-func (h *APIHandler) setHTTPError(w http.ResponseWriter, err error) {
-	var serviceError *lErrors.ServicesError
-	if errors.As(err, &serviceError) {
-		http.Error(w, serviceError.Error(), serviceError.HTTPCode)
-	} else {
-		http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
-	}
 }

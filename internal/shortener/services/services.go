@@ -1,12 +1,13 @@
 package services
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
-	"github.com/MWT-proger/shortener/internal/shortener/errors"
+	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
@@ -14,6 +15,7 @@ import (
 
 // Storager интерфейс хранилища.
 type Storager interface {
+	Set(newModel models.ShortURL) (string, error)
 	Get(shortURL string) (models.ShortURL, error)
 	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
 	DeleteList(data ...models.DeletedShortURL) error
@@ -40,21 +42,43 @@ func NewShortenerService(s Storager) *ShortenerService {
 	return ss
 }
 
+// GenerateShortKeyHandler Принимает большой URL и возвращает маленький
+func (s *ShortenerService) GenerateShortURL(userID uuid.UUID, fullURL string, requestHost string) (string, error) {
+
+	data := models.ShortURL{FullURL: fullURL}
+	data.UserID = userID
+	shortKey, err := s.storage.Set(data)
+
+	if err != nil {
+
+		if !errors.Is(err, lErrors.ErrorDuplicateFullURLServicesError) {
+			return "", lErrors.ErrorDuplicateFullURLServicesError
+		}
+		return "", lErrors.ErrorSetConflictServicesError
+
+	}
+
+	shortURL := utils.GetBaseShortURL(requestHost) + shortKey
+
+	return shortURL, nil
+
+}
+
 // GetFullURLByShortKey Возвращает полный URL по переданному ключу
 func (s *ShortenerService) GetFullURLByShortKey(shortKey string) (string, error) {
 
 	data, err := s.storage.Get(shortKey)
 
 	if err != nil {
-		return "", errors.GetFullURLServicesError
+		return "", lErrors.GetFullURLServicesError
 	}
 
 	if data.DeletedFlag {
-		return "", errors.GoneServicesError
+		return "", lErrors.GoneServicesError
 	}
 
 	if data.FullURL == "" {
-		return "", errors.NotFoundServicesError
+		return "", lErrors.NotFoundServicesError
 	}
 
 	return data.FullURL, nil
@@ -67,11 +91,11 @@ func (s *ShortenerService) GetListUserURLs(userID uuid.UUID, requestHost string)
 	listURLs, err := s.storage.GetList(userID)
 
 	if err != nil {
-		return nil, errors.GetFullURLServicesError
+		return nil, lErrors.GetFullURLServicesError
 	}
 
 	if len(listURLs) == 0 {
-		return nil, errors.NoContentUserServicesError
+		return nil, lErrors.NoContentUserServicesError
 	}
 
 	baseURL := utils.GetBaseShortURL(requestHost)
