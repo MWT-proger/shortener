@@ -68,7 +68,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 
 	}
 
-	responseData.Result = utils.GetBaseShortURL(r.Host) + shortURL
+	responseData.Result = shortURL
 
 	resp, err := json.Marshal(responseData)
 
