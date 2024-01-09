@@ -22,9 +22,9 @@ func TestBuildJWTString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			configs.InitConfig()
 			conf := configs.GetConfig()
-			claims := &Claims{}
+			claims := &claims{}
 
-			tokenString, err := BuildJWTString(tt.userID)
+			tokenString, err := buildJWTString(tt.userID)
 
 			assert.NoError(t, err, "Ошибка при генерации токена")
 			assert.NotNil(t, tokenString, "Токен пустой")
@@ -48,7 +48,7 @@ func BenchmarkBuildJWTString(b *testing.B) {
 	configs.InitConfig()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		BuildJWTString(uuid.New())
+		buildJWTString(uuid.New())
 	}
 
 }
@@ -65,9 +65,9 @@ func TestGetUserID(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			configs.InitConfig()
-			tokenString, _ := BuildJWTString(tt.userID)
+			tokenString, _ := buildJWTString(tt.userID)
 
-			userID := GetUserID(tokenString)
+			userID := getUserID(tokenString)
 
 			assert.Equal(t, tt.userID, userID, "ID пользователя не совпадают")
 		})
@@ -80,10 +80,10 @@ func BenchmarkGetUserID(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer() // останавливаем таймер
-		tokenString, _ := BuildJWTString(uuid.New())
+		tokenString, _ := buildJWTString(uuid.New())
 		b.StartTimer() // возобновляем таймер
 
-		GetUserID(tokenString)
+		getUserID(tokenString)
 	}
 
 }
