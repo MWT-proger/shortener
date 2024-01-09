@@ -8,8 +8,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 // APIHandler Структура объеденяющая все эндпоинты.
@@ -63,7 +63,7 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	userID, ok := request.UserIDFrom(ctx)
+	userID, ok := auth.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)

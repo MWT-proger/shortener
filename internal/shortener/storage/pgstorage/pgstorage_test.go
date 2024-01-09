@@ -12,9 +12,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 func TestPgStorageGet(t *testing.T) {
@@ -127,7 +127,7 @@ func TestPgStorageDoSet(t *testing.T) {
 				mock.ExpectCommit()
 			}
 			ctx := context.TODO()
-			ctx = request.WithUserID(ctx, tt.model.UserID)
+			ctx = auth.WithUserID(ctx, tt.model.UserID)
 			err := s.doSet(ctx, &tt.model)
 
 			if tt.errorString != "" {

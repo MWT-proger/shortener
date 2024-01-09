@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/MWT-proger/shortener/internal/shortener/request"
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 )
 
 // GetListUserURLsHandler Возвращает список URL-адресов пользователя.
 func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 	var (
 		ctx        = r.Context()
-		userID, ok = request.UserIDFrom(ctx)
+		userID, ok = auth.UserIDFrom(ctx)
 	)
 
 	if !ok {
@@ -46,7 +46,7 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 
 	var (
 		ctx        = r.Context()
-		userID, ok = request.UserIDFrom(ctx)
+		userID, ok = auth.UserIDFrom(ctx)
 		data       []string
 	)
 

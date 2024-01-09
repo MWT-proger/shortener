@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 // JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler.
@@ -36,7 +36,7 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	userID, ok := request.UserIDFrom(ctx)
+	userID, ok := auth.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
@@ -90,7 +90,7 @@ func (h *APIHandler) JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *
 		}
 	}
 
-	userID, ok := request.UserIDFrom(ctx)
+	userID, ok := auth.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)

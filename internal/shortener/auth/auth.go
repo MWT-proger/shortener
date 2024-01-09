@@ -8,7 +8,6 @@ import (
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 // Claims сущность пользователя
@@ -61,7 +60,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 			http.SetCookie(w, &newCookie)
 		}
 
-		ctx = request.WithUserID(ctx, UserID)
+		ctx = WithUserID(ctx, UserID)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
