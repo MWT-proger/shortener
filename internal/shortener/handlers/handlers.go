@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"io"
 	"net/http"
 
@@ -11,28 +12,12 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
-// @Title Shortener API
-// @Description Сервис сокращения ссылок.
-// @Version 1.0
-
-// @Contact.email support@localhost.ru
-
-// @BasePath /
-// @Host localhost:7000
-
-// @SecurityDefinitions.apikey ApiKeyAuth
-// @In cookie
-// @Name token
-
-// @Tag.name Short
-// @Tag.description "API сокращения и получения ссылок"
-
-// APIHandler Структура объеденяющая все эндпоинты
+// APIHandler Структура объеденяющая все эндпоинты.
 type APIHandler struct {
 	shortService ShortenerServicer
 }
 
-// NewAPIHandler
+// NewAPIHandler создает новую структуру APIHandler.
 func NewAPIHandler(service ShortenerServicer) (h *APIHandler, err error) {
 	hh := &APIHandler{
 		shortService: service,
@@ -41,47 +26,51 @@ func NewAPIHandler(service ShortenerServicer) (h *APIHandler, err error) {
 	return hh, err
 }
 
+// ShortenerServicer интерфейс описывающий необходимые методы для сервисного слоя.
 type ShortenerServicer interface {
-	GetFullURLByShortKey(shortKey string) (string, error)
-	GetListUserURLs(userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
+	GetFullURLByShortKey(ctx context.Context, shortKey string) (string, error)
+	GetListUserURLs(ctx context.Context, userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
 
-	GenerateShortURL(userID uuid.UUID, fullURL string, requestHost string) (string, error)
-	GenerateMultyShortURL(userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
+	GenerateShortURL(ctx context.Context, userID uuid.UUID, fullURL string, requestHost string) (string, error)
+	GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
 
-	DeleteListUserURLsHandler(userID uuid.UUID, data []string)
+	DeleteListUserURLsHandler(ctx context.Context, userID uuid.UUID, data []string)
 
 	PingStorage() bool
 }
 
-// GenerateShortkeyHandler Принимает большой URL и возвращает маленький
+// GenerateShortkeyHandler Принимает большой URL и возвращает маленький.
 func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
 
-	var finalStatusCode = http.StatusCreated
+	var (
+		finalStatusCode = http.StatusCreated
+		ctx             = r.Context()
+	)
 
 	defer r.Body.Close()
 
-	requestData, err := io.ReadAll((r.Body))
+	requestBody, err := io.ReadAll(r.Body)
 
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	stringRequestData := string(requestData)
+	stringRequestBody := string(requestBody)
 
-	if stringRequestData == "" {
+	if stringRequestBody == "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	userID, ok := request.UserIDFrom(r.Context())
+	userID, ok := request.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(userID, stringRequestData, r.Host)
+	shortURL, err := h.shortService.GenerateShortURL(ctx, userID, stringRequestBody, r.Host)
 
 	if err != nil {
 		finalStatusCode = h.setOrGetHTTPCode(w, err)
@@ -97,16 +86,14 @@ func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Requ
 
 }
 
-// GetURLByKeyHandler godoc
-// @Tags Short
-// @Summary Получить полный url по ключу
-// @ID GetURLByKeyHandler
-// @Success 307 {string} string
-// @Failure 500 {string} string "Внутренняя ошибка"
-// @Router /{shortKey} [get]
+// GetURLByKeyHandler Принимает короткий ключ и делает rederict на полный URL
 func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		ctx      = r.Context()
+		shortKey = chi.URLParam(r, "shortKey")
+	)
 
-	fullURL, err := h.shortService.GetFullURLByShortKey(chi.URLParam(r, "shortKey"))
+	fullURL, err := h.shortService.GetFullURLByShortKey(ctx, shortKey)
 
 	if err != nil {
 		h.setHTTPError(w, err)

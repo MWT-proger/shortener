@@ -7,17 +7,19 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
-// GetURLByKeyHandler Возвращает список URL-адресов пользователя
+// GetListUserURLsHandler Возвращает список URL-адресов пользователя.
 func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-
-	userID, ok := request.UserIDFrom(r.Context())
+	var (
+		ctx        = r.Context()
+		userID, ok = request.UserIDFrom(ctx)
+	)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	listURLs, err := h.shortService.GetListUserURLs(userID, r.Host)
+	listURLs, err := h.shortService.GetListUserURLs(ctx, userID, r.Host)
 
 	if err != nil {
 		h.setHTTPError(w, err)
@@ -38,17 +40,20 @@ func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Reque
 }
 
 // DeleteListUserURLsHandler  в теле запроса принимает
-// список идентификаторов сокращённых URL для асинхронного удаления
-// В случае успешного приёма запроса возвращает HTTP-статус 202 Accepted
+// список идентификаторов сокращённых URL для асинхронного удаления.
+// В случае успешного приёма запроса возвращает HTTP-статус 202 Accepted.
 func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := request.UserIDFrom(r.Context())
+	var (
+		ctx        = r.Context()
+		userID, ok = request.UserIDFrom(ctx)
+		data       []string
+	)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	var data []string
 
 	defer r.Body.Close()
 
@@ -57,7 +62,7 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.shortService.DeleteListUserURLsHandler(userID, data)
+	h.shortService.DeleteListUserURLsHandler(ctx, userID, data)
 
 	w.WriteHeader(http.StatusAccepted)
 

@@ -8,19 +8,20 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
-// JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler
+// JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler.
 type JSONShortenResponse struct {
 	Result string `json:"result"`
 }
 
 // JSONGenerateShortkeyHandler Принимает в теле запроса JSON-объект {"url":"<some_url>"}
-// и возвращает в ответ объект {"result":"<short_url>"}
+// и возвращает в ответ объект {"result":"<short_url>"}.
 func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		data            models.JSONShortenRequest
 		responseData    JSONShortenResponse
 		finalStatusCode = http.StatusCreated
+		ctx             = r.Context()
 	)
 
 	defer r.Body.Close()
@@ -35,14 +36,14 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	userID, ok := request.UserIDFrom(r.Context())
+	userID, ok := request.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	shortURL, err := h.shortService.GenerateShortURL(userID, data.URL, r.Host)
+	shortURL, err := h.shortService.GenerateShortURL(ctx, userID, data.URL, r.Host)
 
 	if err != nil {
 		finalStatusCode = h.setOrGetHTTPCode(w, err)
@@ -69,7 +70,10 @@ func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.
 // JSONMultyGenerateShortkeyHandler Принимает в теле запроса JSON-объект в виде списка
 // и возвращает в ответ объект в виде списка
 func (h *APIHandler) JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
-	var data []models.JSONShortURL
+	var (
+		data []models.JSONShortURL
+		ctx  = r.Context()
+	)
 
 	defer r.Body.Close()
 
@@ -86,14 +90,14 @@ func (h *APIHandler) JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *
 		}
 	}
 
-	userID, ok := request.UserIDFrom(r.Context())
+	userID, ok := request.UserIDFrom(ctx)
 
 	if !ok {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.shortService.GenerateMultyShortURL(userID, data, r.Host); err != nil {
+	if err := h.shortService.GenerateMultyShortURL(ctx, userID, data, r.Host); err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}

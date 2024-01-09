@@ -10,6 +10,7 @@ import (
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 )
 
+// unmarshalBody распоковывает тело запроса в установленную форму.
 func (h *APIHandler) unmarshalBody(body io.ReadCloser, form interface{}) error {
 
 	defer body.Close()
@@ -28,17 +29,21 @@ func (h *APIHandler) unmarshalBody(body io.ReadCloser, form interface{}) error {
 	return nil
 }
 
-// setHTTPError(w http.ResponseWriter, err error) присваивает response статус ответа
-// вынесен для исключения дублирования в коде
+// setHTTPError присваивает response статус ответа при ошибке в сервисном слою.
 func (h *APIHandler) setHTTPError(w http.ResponseWriter, err error) {
+
 	var serviceError *lErrors.ServicesError
+
 	if errors.As(err, &serviceError) {
 		http.Error(w, serviceError.Error(), serviceError.HTTPCode)
+
 	} else {
 		http.Error(w, "Ошибка сервера, попробуйте позже.", http.StatusInternalServerError)
 	}
 }
 
+// setOrGetHTTPCode присваивает response статус ответа при ошибке в сервисном слою.
+// Возвращает HTTPCode, при необходимости досрочного выполнения кода отправляе HTTPCode = 0.
 func (h *APIHandler) setOrGetHTTPCode(w http.ResponseWriter, err error) int {
 	var serviceError *lErrors.ServicesError
 
