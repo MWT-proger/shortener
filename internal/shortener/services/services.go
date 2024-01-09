@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
@@ -163,7 +162,7 @@ func (s *ShortenerService) flushDeleted() {
 			}
 			err := s.storage.DeleteList(data...)
 			if err != nil {
-				logger.Log.Debug("cannot deleted shortURL", zap.Error(err))
+				logger.Log.Debug("cannot deleted shortURL", logger.ErrorField(err))
 				continue
 			}
 			data = nil

@@ -16,7 +16,7 @@ func Router(h *handlers.APIHandler) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Group(func(r chi.Router) {
-		r.Use(logger.RequestLogger)
+		r.Use(logger.RequestLoggerMiddleware)
 		r.Use(gzip.GzipMiddleware)
 
 		r.Use(auth.AuthCookieMiddleware)
