@@ -86,7 +86,7 @@ func TestPgStorageDoSet(t *testing.T) {
 			name:        "Тест 1 - Проверяем на дубликат short_key",
 			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru", UserID: uuid.New()},
 			errorsDB:    &pgconn.PgError{Code: "23505", ConstraintName: "shorturl_short_key_key"},
-			errorString: (&lErrors.ErrorDuplicateShortKey{}).Error(),
+			errorString: lErrors.ErrorDuplicateShortKey.Error(),
 		},
 		{
 			name:        "Тест 2 - Проверяем на успех",

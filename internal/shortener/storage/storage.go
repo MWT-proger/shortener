@@ -52,7 +52,7 @@ func (s *Storage) GetList(userID uuid.UUID) ([]*models.JSONShortURL, error) {
 
 // Абстрактный метод
 func (s *Storage) Ping() error {
-	return &errors.ErrorDBNotConnection{}
+	return errors.ErrorDBNotConnection
 }
 
 // Абстрактный метод

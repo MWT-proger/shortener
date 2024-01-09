@@ -1,22 +1,15 @@
 package errors
 
-import "net/http"
+import (
+	"errors"
+	"net/http"
+)
 
-// Error
-type ErrorDBNotConnection struct{}
+// ErrorDBNotConnection ошибка подключения хранилища.
+var ErrorDBNotConnection = errors.New("строка с адресом подключения к БД не указана")
 
-// Error
-func (m *ErrorDBNotConnection) Error() string {
-	return "строка с адресом подключения к БД не указана"
-}
-
-// Error
-type ErrorDuplicateShortKey struct{}
-
-// Error
-func (m *ErrorDuplicateShortKey) Error() string {
-	return "повторяющееся значение short_key нарушает уникальное ограничение"
-}
+// ErrorDuplicateShortKey данный short_key уже указан.
+var ErrorDuplicateShortKey = errors.New("повторяющееся значение short_key нарушает уникальное ограничение")
 
 // ServicesError тип ошибки сервисного слоя.
 // Содержит текст ошибки и http код ошибки.
@@ -50,28 +43,28 @@ var GoneServicesError = NewServicesError(
 	true,
 )
 
-// NotFoundServicesErro ошибка получения объекта. Объект не найден.
+// NotFoundServicesError ошибка получения объекта. Объект не найден.
 var NotFoundServicesError = NewServicesError(
 	"запрашиваемый объект не найден",
 	http.StatusBadRequest,
 	true,
 )
 
-// NoContentUserServicesError список URL-адресов пользователя пуст
+// NoContentUserServicesError список URL-адресов пользователя пуст.
 var NoContentUserServicesError = NewServicesError(
 	"список URL-адресов пользователя пуст",
 	http.StatusNoContent,
 	true,
 )
 
-// NoContentUserServicesError список URL-адресов пользователя пуст
+// ErrorDuplicateFullURLServicesError у данного пользователя full_url уже зарегистрирован.
 var ErrorDuplicateFullURLServicesError = NewServicesError(
 	"повторяющееся значение full_url нарушает уникальное ограничение",
 	http.StatusConflict,
 	false,
 )
 
-// GetFullURLServicesError ошибка получения FullURL.
+// InternalServicesError внутренняя ошибка сервиса.
 var InternalServicesError = NewServicesError(
 	"внутренняя ошибка сервиса ",
 	http.StatusInternalServerError,
