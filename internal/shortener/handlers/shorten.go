@@ -8,18 +8,13 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 )
 
-// JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler.
-type JSONShortenResponse struct {
-	Result string `json:"result"`
-}
-
 // JSONGenerateShortkeyHandler Принимает в теле запроса JSON-объект {"url":"<some_url>"}
 // и возвращает в ответ объект {"result":"<short_url>"}.
 func (h *APIHandler) JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	var (
-		data            models.JSONShortenRequest
-		responseData    JSONShortenResponse
+		data            jsonShortenRequest
+		responseData    jsonShortenResponse
 		finalStatusCode = http.StatusCreated
 		ctx             = r.Context()
 	)
@@ -113,4 +108,19 @@ func (h *APIHandler) JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *
 	w.WriteHeader(http.StatusCreated)
 	w.Write(resp)
 
+}
+
+// jsonShortenResponse - тело ответа для JSONGenerateShortkeyHandler.
+type jsonShortenResponse struct {
+	Result string `json:"result"`
+}
+
+// jsonShortenRequest - тело запроса для JSONGenerateShortkeyHandler.
+type jsonShortenRequest struct {
+	URL string `json:"url"`
+}
+
+// IsValid проверяет на валидность JSONShortenRequest.
+func (d *jsonShortenRequest) IsValid() bool {
+	return d.URL != ""
 }
