@@ -34,7 +34,7 @@ type ShortenerServicer interface {
 	GenerateShortURL(ctx context.Context, userID uuid.UUID, fullURL string, requestHost string) (string, error)
 	GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
 
-	DeleteListUserURLsHandler(ctx context.Context, userID uuid.UUID, data []string)
+	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
 
 	PingStorage() bool
 }

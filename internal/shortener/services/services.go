@@ -45,13 +45,12 @@ func NewShortenerService(s Storager) *ShortenerService {
 	return ss
 }
 
-// GenerateShortKeyHandler Принимает большой URL и возвращает маленький
+// GenerateShortURL Принимает большой URL и возвращает маленький.
 func (s *ShortenerService) GenerateShortURL(ctx context.Context, userID uuid.UUID, fullURL string, requestHost string) (string, error) {
-
+	var responseErr error
 	data := models.ShortURL{FullURL: fullURL}
 	data.UserID = userID
 	shortKey, err := s.storage.Set(data)
-	var responseErr error
 
 	if err != nil {
 
@@ -67,7 +66,7 @@ func (s *ShortenerService) GenerateShortURL(ctx context.Context, userID uuid.UUI
 
 }
 
-// GenerateMultyShortURL
+// GenerateMultyShortURL Принимает  []models.JSONShortURL и  добавлет в каждый объект сокращенный URL.
 func (s *ShortenerService) GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error {
 
 	baseShortURL := utils.GetBaseShortURL(requestHost)
@@ -81,7 +80,7 @@ func (s *ShortenerService) GenerateMultyShortURL(ctx context.Context, userID uui
 	return nil
 }
 
-// GetFullURLByShortKey Возвращает полный URL по переданному ключу
+// GetFullURLByShortKey Возвращает полный URL по переданному ключу.
 func (s *ShortenerService) GetFullURLByShortKey(ctx context.Context, shortKey string) (string, error) {
 
 	data, err := s.storage.Get(shortKey)
@@ -102,7 +101,7 @@ func (s *ShortenerService) GetFullURLByShortKey(ctx context.Context, shortKey st
 
 }
 
-// GetListUserURLsHandler Возвращает список URL-адресов пользователя
+// GetListUserURLs Возвращает список URL-адресов пользователя.
 func (s *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error) {
 
 	listURLs, err := s.storage.GetList(userID)
@@ -125,9 +124,8 @@ func (s *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID
 
 }
 
-// DeleteListUserURLs принимает список идентификаторов сокращённых URL для асинхронного удаления
-
-func (s *ShortenerService) DeleteListUserURLsHandler(ctx context.Context, userID uuid.UUID, data []string) {
+// DeleteListUserURLs принимает список идентификаторов сокращённых URL для асинхронного удаления.
+func (s *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string) {
 
 	go func() {
 
@@ -145,7 +143,7 @@ func (s *ShortenerService) DeleteListUserURLsHandler(ctx context.Context, userID
 
 }
 
-// flushDeleted запускается в горутине и удаляет ссылки
+// flushDeleted запускается в горутине и удаляет ссылки.
 func (s *ShortenerService) flushDeleted() {
 	// будем удалять, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)

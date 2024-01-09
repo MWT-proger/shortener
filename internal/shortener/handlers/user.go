@@ -62,7 +62,7 @@ func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.shortService.DeleteListUserURLsHandler(ctx, userID, data)
+	h.shortService.DeleteListUserURLs(ctx, userID, data)
 
 	w.WriteHeader(http.StatusAccepted)
 

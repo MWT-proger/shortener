@@ -1,6 +1,6 @@
 package services
 
-// GenerateShortKeyHandler Принимает большой URL и возвращает маленький
+// PingStorage() Проверяет соединение с базой данных.
 func (s *ShortenerService) PingStorage() bool {
 
 	if err := s.storage.Ping(); err != nil {
