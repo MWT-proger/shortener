@@ -6,7 +6,6 @@ import (
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
-	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
 	"github.com/MWT-proger/shortener/internal/shortener/services"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
@@ -58,6 +57,7 @@ func initProject(ctx context.Context) (storage.OperationStorager, error) {
 func run(ctx context.Context) error {
 
 	storage, err := initProject(ctx)
+	conf := configs.GetConfig()
 
 	if err != nil {
 		return err
@@ -67,13 +67,13 @@ func run(ctx context.Context) error {
 
 	service := services.NewShortenerService(storage)
 
-	h, _ := handlers.NewAPIHandler(service)
-
-	r := router.Router(h)
-
-	err = server.Run(r)
+	h, err := handlers.NewAPIHandler(service)
 
 	if err != nil {
+		return err
+	}
+
+	if err := server.Run(h, conf); err != nil {
 		return err
 	}
 

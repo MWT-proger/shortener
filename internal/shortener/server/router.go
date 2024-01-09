@@ -1,17 +1,29 @@
-package router
+package server
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
 	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/gzip"
-	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 )
 
-// Router() Перенаправляет запросы на необходимые хендлеры
-func Router(h *handlers.APIHandler) *chi.Mux {
+// Handler интерфейс определяет необходимые методы для инициализации маршрутизатора.
+type Handler interface {
+	DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Request)
+	GenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
+	GetListUserURLsHandler(w http.ResponseWriter, r *http.Request)
+	GetURLByKeyHandler(w http.ResponseWriter, r *http.Request)
+	JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
+	JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
+	PingDB(w http.ResponseWriter, r *http.Request)
+}
+
+// initRouter() инициализирует и возвращает маршрутизатор.
+func initRouter(h Handler) *chi.Mux {
 
 	r := chi.NewRouter()
 
