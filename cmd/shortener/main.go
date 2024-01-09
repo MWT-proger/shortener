@@ -56,17 +56,19 @@ func initProject(ctx context.Context) (storage.OperationStorager, error) {
 
 // run() выполняет все предворительные действия и вызывает функцию запуска сервера
 func run(ctx context.Context) error {
-	s, err := initProject(ctx)
+
+	storage, err := initProject(ctx)
 
 	if err != nil {
 		return err
 	}
 
-	defer s.Close()
+	defer storage.Close()
 
-	service := services.NewShortenerService(s)
+	service := services.NewShortenerService(storage)
 
-	h, _ := handlers.NewAPIHandler(s, service)
+	h, _ := handlers.NewAPIHandler(service)
+
 	r := router.Router(h)
 
 	err = server.Run(r)

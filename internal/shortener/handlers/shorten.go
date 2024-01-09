@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
-
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/request"
-	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
 // JSONShortenResponse - тело ответа для JSONGenerateShortkeyHandler
@@ -88,18 +85,21 @@ func (h *APIHandler) JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *
 			return
 		}
 	}
-	userID, ok := request.UserIDFrom(r.Context())
-	if !ok {
-		userID = uuid.Nil
-	}
-	err := h.storage.SetMany(data, utils.GetBaseShortURL(r.Host), userID)
 
-	if err != nil {
+	userID, ok := request.UserIDFrom(r.Context())
+
+	if !ok {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.shortService.GenerateMultyShortURL(userID, data, r.Host); err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	resp, err := json.Marshal(data)
+
 	if err != nil {
 		http.Error(w, "", http.StatusInternalServerError)
 		return

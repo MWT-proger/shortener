@@ -16,9 +16,12 @@ import (
 // Storager интерфейс хранилища.
 type Storager interface {
 	Set(newModel models.ShortURL) (string, error)
+	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
 	Get(shortURL string) (models.ShortURL, error)
 	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
 	DeleteList(data ...models.DeletedShortURL) error
+
+	Ping() error
 }
 
 // ShortenerService сервис обработки Full and Short URLs.
@@ -62,6 +65,20 @@ func (s *ShortenerService) GenerateShortURL(userID uuid.UUID, fullURL string, re
 
 	return shortURL, responseErr
 
+}
+
+// GenerateMultyShortURL
+func (s *ShortenerService) GenerateMultyShortURL(userID uuid.UUID, data []models.JSONShortURL, requestHost string) error {
+
+	baseShortURL := utils.GetBaseShortURL(requestHost)
+
+	err := s.storage.SetMany(data, baseShortURL, userID)
+
+	if err != nil {
+		return lErrors.InternalServicesError
+	}
+
+	return nil
 }
 
 // GetFullURLByShortKey Возвращает полный URL по переданному ключу

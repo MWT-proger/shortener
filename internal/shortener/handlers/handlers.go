@@ -9,7 +9,6 @@ import (
 
 	"github.com/MWT-proger/shortener/internal/shortener/models"
 	"github.com/MWT-proger/shortener/internal/shortener/request"
-	"github.com/MWT-proger/shortener/internal/shortener/storage"
 )
 
 // @Title Shortener API
@@ -30,16 +29,13 @@ import (
 
 // APIHandler Структура объеденяющая все эндпоинты
 type APIHandler struct {
-	storage storage.OperationStorager
-
 	shortService ShortenerServicer
 }
 
 // NewAPIHandler
-func NewAPIHandler(s storage.OperationStorager, ss ShortenerServicer) (h *APIHandler, err error) {
+func NewAPIHandler(service ShortenerServicer) (h *APIHandler, err error) {
 	hh := &APIHandler{
-		storage:      s,
-		shortService: ss,
+		shortService: service,
 	}
 
 	return hh, err
@@ -48,8 +44,13 @@ func NewAPIHandler(s storage.OperationStorager, ss ShortenerServicer) (h *APIHan
 type ShortenerServicer interface {
 	GetFullURLByShortKey(shortKey string) (string, error)
 	GetListUserURLs(userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
-	DeleteListUserURLsHandler(userID uuid.UUID, data []string)
+
 	GenerateShortURL(userID uuid.UUID, fullURL string, requestHost string) (string, error)
+	GenerateMultyShortURL(userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
+
+	DeleteListUserURLsHandler(userID uuid.UUID, data []string)
+
+	PingStorage() bool
 }
 
 // GenerateShortkeyHandler Принимает большой URL и возвращает маленький
