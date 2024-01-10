@@ -15,11 +15,11 @@ import (
 
 // Storager интерфейс хранилища.
 type Storager interface {
-	Set(newModel models.ShortURL) (string, error)
-	SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
-	Get(shortURL string) (models.ShortURL, error)
-	GetList(userID uuid.UUID) ([]*models.JSONShortURL, error)
-	DeleteList(data ...models.DeletedShortURL) error
+	Set(ctx context.Context, newModel models.ShortURL) (string, error)
+	SetMany(ctx context.Context, data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error
+	Get(ctx context.Context, shortURL string) (models.ShortURL, error)
+	GetList(ctx context.Context, userID uuid.UUID) ([]*models.JSONShortURL, error)
+	DeleteList(ctx context.Context, data ...models.DeletedShortURL) error
 
 	Ping() error
 }
@@ -32,7 +32,7 @@ type ShortenerService struct {
 }
 
 // NewShortenerService - создаёт новый экземпляр сервиса обработки Full and Short URLs.
-func NewShortenerService(s Storager) *ShortenerService {
+func NewShortenerService(ctx context.Context, s Storager) *ShortenerService {
 
 	ss := &ShortenerService{
 		storage:     s,
@@ -40,7 +40,7 @@ func NewShortenerService(s Storager) *ShortenerService {
 		doneCh:      make(chan struct{}),
 	}
 
-	go ss.flushDeleted()
+	go ss.flushDeleted(ctx)
 
 	return ss
 }
@@ -50,7 +50,7 @@ func (s *ShortenerService) GenerateShortURL(ctx context.Context, userID uuid.UUI
 	var responseErr error
 	data := models.ShortURL{FullURL: fullURL}
 	data.UserID = userID
-	shortKey, err := s.storage.Set(data)
+	shortKey, err := s.storage.Set(ctx, data)
 
 	if err != nil {
 
@@ -71,7 +71,7 @@ func (s *ShortenerService) GenerateMultyShortURL(ctx context.Context, userID uui
 
 	baseShortURL := utils.GetBaseShortURL(requestHost)
 
-	err := s.storage.SetMany(data, baseShortURL, userID)
+	err := s.storage.SetMany(ctx, data, baseShortURL, userID)
 
 	if err != nil {
 		return lErrors.InternalServicesError
@@ -83,7 +83,7 @@ func (s *ShortenerService) GenerateMultyShortURL(ctx context.Context, userID uui
 // GetFullURLByShortKey Возвращает полный URL по переданному ключу.
 func (s *ShortenerService) GetFullURLByShortKey(ctx context.Context, shortKey string) (string, error) {
 
-	data, err := s.storage.Get(shortKey)
+	data, err := s.storage.Get(ctx, shortKey)
 
 	if err != nil {
 		return "", lErrors.GetFullURLServicesError
@@ -104,7 +104,7 @@ func (s *ShortenerService) GetFullURLByShortKey(ctx context.Context, shortKey st
 // GetListUserURLs Возвращает список URL-адресов пользователя.
 func (s *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error) {
 
-	listURLs, err := s.storage.GetList(userID)
+	listURLs, err := s.storage.GetList(ctx, userID)
 
 	if err != nil {
 		return nil, lErrors.GetFullURLServicesError
@@ -144,7 +144,7 @@ func (s *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.U
 }
 
 // flushDeleted запускается в горутине и удаляет ссылки.
-func (s *ShortenerService) flushDeleted() {
+func (s *ShortenerService) flushDeleted(ctx context.Context) {
 	// будем удалять, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)
 
@@ -158,7 +158,7 @@ func (s *ShortenerService) flushDeleted() {
 			if len(data) == 0 {
 				continue
 			}
-			err := s.storage.DeleteList(data...)
+			err := s.storage.DeleteList(ctx, data...)
 			if err != nil {
 				logger.Log.Debug("cannot deleted shortURL", logger.ErrorField(err))
 				continue

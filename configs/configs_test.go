@@ -86,7 +86,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			os.Setenv("FILE_STORAGE_PATH", tt.want.JSONFileDB)
 			os.Setenv("DATABASE_DSN", tt.want.DatabaseDSN)
 			os.Setenv("SECRET_KEY", tt.want.Auth.SecretKey)
-			SetConfigFromEnv()
+			setConfigFromEnv()
 			assert.Equal(t, newConfig, tt.want, "newConfig не совпадает с ожидаемым")
 		})
 	}

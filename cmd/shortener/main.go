@@ -24,40 +24,24 @@ func main() {
 	}
 }
 
-// initProject() иницилизирует все необходимые переменный проекта
-func initProject(ctx context.Context) (storage.OperationStorager, error) {
-
-	var (
-		s          storage.OperationStorager
-		configInit = configs.InitConfig()
-	)
-
-	parseFlags(configInit)
-
-	conf := configs.SetConfigFromEnv()
-
-	if conf.DatabaseDSN != "" {
-		s = &pgstorage.PgStorage{}
-	} else {
-		s = &filestorage.FileStorage{}
-	}
-
-	if err := s.Init(ctx); err != nil {
-		return nil, err
-	}
-
-	if err := logger.Initialize(conf.LogLevel); err != nil {
-		return nil, err
-	}
-
-	return s, nil
-}
-
-// run() выполняет все предворительные действия и вызывает функцию запуска сервера
+// run() выполняет все предворительные действия и вызывает функцию запуска сервера.
 func run(ctx context.Context) error {
 
-	storage, err := initProject(ctx)
-	conf := configs.GetConfig()
+	var (
+		conf    = configs.InitConfig()
+		storage storage.OperationStorager
+		err     error
+	)
+
+	if err := logger.Initialize(conf.LogLevel); err != nil {
+		return err
+	}
+
+	if conf.DatabaseDSN != "" {
+		storage, err = pgstorage.NewPgStorage(ctx, conf)
+	} else {
+		storage, err = filestorage.NewFileStorage(ctx, conf)
+	}
 
 	if err != nil {
 		return err
@@ -65,15 +49,15 @@ func run(ctx context.Context) error {
 
 	defer storage.Close()
 
-	service := services.NewShortenerService(storage)
+	service := services.NewShortenerService(ctx, storage)
 
-	h, err := handlers.NewAPIHandler(service)
+	apiHandler, err := handlers.NewAPIHandler(service)
 
 	if err != nil {
 		return err
 	}
 
-	if err := server.Run(h, conf); err != nil {
+	if err := server.Run(apiHandler, conf); err != nil {
 		return err
 	}
 

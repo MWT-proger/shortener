@@ -48,7 +48,7 @@ func TestPgStorageGet(t *testing.T) {
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-	s := &PgStorage{
+	s := &pgStorage{
 		db: sqlxDB,
 	}
 	querySQL := "SELECT full_url, is_deleted FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
@@ -67,7 +67,7 @@ func TestPgStorageGet(t *testing.T) {
 					WithArgs(tt.shortKey).
 					WillReturnRows(rows)
 			}
-			got, _ := s.Get(tt.shortKey)
+			got, _ := s.Get(context.Background(), tt.shortKey)
 
 			assert.Equal(t, got.FullURL, tt.result.FullURL, "Результат не совпадает с ожиданием")
 		})
@@ -106,7 +106,7 @@ func TestPgStorageDoSet(t *testing.T) {
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-	s := &PgStorage{
+	s := &pgStorage{
 		db: sqlxDB,
 	}
 	querySQL := "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3)"
