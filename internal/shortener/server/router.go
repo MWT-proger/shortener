@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
+	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/gzip"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
@@ -23,7 +24,7 @@ type Handler interface {
 }
 
 // initRouter() инициализирует и возвращает маршрутизатор.
-func initRouter(h Handler) *chi.Mux {
+func initRouter(conf configs.Config, h Handler) *chi.Mux {
 
 	r := chi.NewRouter()
 
@@ -31,7 +32,9 @@ func initRouter(h Handler) *chi.Mux {
 		r.Use(logger.RequestLoggerMiddleware)
 		r.Use(gzip.GzipMiddleware)
 
-		r.Use(auth.AuthCookieMiddleware)
+		r.Use(func(next http.Handler) http.Handler {
+			return auth.AuthCookieMiddleware(next, conf)
+		})
 
 		r.Post("/", h.GenerateShortkeyHandler)
 		r.Get("/{shortKey}", h.GetURLByKeyHandler)

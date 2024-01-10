@@ -19,8 +19,7 @@ const nameCookie = "token"
 
 // buildJWTString(UserID uuid.UUID) (string, error) создаёт токен для пользователя с UserID
 // и возвращает его в виде строки в случае успеха
-func buildJWTString(UserID uuid.UUID) (string, error) {
-	conf := configs.GetConfig()
+func buildJWTString(conf configs.Config, UserID uuid.UUID) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims{
 		RegisteredClaims: jwt.RegisteredClaims{},
@@ -38,10 +37,9 @@ func buildJWTString(UserID uuid.UUID) (string, error) {
 
 // getUserID(tokenString string) (uuid.UUID, error) Проверяет токен
 // и в случае успеха возвращает из полезной нагрузки UserID
-func getUserID(tokenString string) uuid.UUID {
+func getUserID(conf configs.Config, tokenString string) uuid.UUID {
 
 	claims := &claims{}
-	conf := configs.GetConfig()
 
 	token, err := jwt.ParseWithClaims(tokenString, claims,
 		func(t *jwt.Token) (interface{}, error) {

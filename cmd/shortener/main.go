@@ -49,7 +49,7 @@ func run(ctx context.Context) error {
 
 	defer storage.Close()
 
-	service := services.NewShortenerService(ctx, storage)
+	service := services.NewShortenerService(ctx, conf, storage)
 
 	apiHandler, err := handlers.NewAPIHandler(service)
 

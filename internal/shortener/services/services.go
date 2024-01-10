@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MWT-proger/shortener/configs"
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
@@ -26,16 +27,18 @@ type Storager interface {
 
 // ShortenerService сервис обработки Full and Short URLs.
 type ShortenerService struct {
+	conf        configs.Config
 	storage     Storager
 	deletedChan chan models.DeletedShortURL
 	doneCh      chan struct{}
 }
 
 // NewShortenerService - создаёт новый экземпляр сервиса обработки Full and Short URLs.
-func NewShortenerService(ctx context.Context, s Storager) *ShortenerService {
+func NewShortenerService(ctx context.Context, conf configs.Config, s Storager) *ShortenerService {
 
 	ss := &ShortenerService{
 		storage:     s,
+		conf:        conf,
 		deletedChan: make(chan models.DeletedShortURL, 1024),
 		doneCh:      make(chan struct{}),
 	}
@@ -60,7 +63,7 @@ func (s *ShortenerService) GenerateShortURL(ctx context.Context, userID uuid.UUI
 		responseErr = lErrors.ErrorDuplicateFullURLServicesError
 
 	}
-	shortURL := utils.GetBaseShortURL(requestHost) + shortKey
+	shortURL := utils.GetBaseShortURL(s.conf, requestHost) + shortKey
 
 	return shortURL, responseErr
 
@@ -69,7 +72,7 @@ func (s *ShortenerService) GenerateShortURL(ctx context.Context, userID uuid.UUI
 // GenerateMultyShortURL Принимает  []models.JSONShortURL и  добавлет в каждый объект сокращенный URL.
 func (s *ShortenerService) GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error {
 
-	baseShortURL := utils.GetBaseShortURL(requestHost)
+	baseShortURL := utils.GetBaseShortURL(s.conf, requestHost)
 
 	err := s.storage.SetMany(ctx, data, baseShortURL, userID)
 
@@ -114,7 +117,7 @@ func (s *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID
 		return nil, lErrors.NoContentUserServicesError
 	}
 
-	baseURL := utils.GetBaseShortURL(requestHost)
+	baseURL := utils.GetBaseShortURL(s.conf, requestHost)
 
 	for _, v := range listURLs {
 		v.ShortURL = baseURL + v.ShortURL

@@ -24,11 +24,6 @@ type Config struct {
 
 var newConfig Config
 
-// GetConfig() выводит не импортируемую переменную newConfig.
-func GetConfig() Config {
-	return newConfig
-}
-
 // InitConfig() Инициализирует локальную не импортируемую переменную newConfig.
 // Вызывает все доступные методы получения конфигов.
 // Вызывается один раз при старте проекта.

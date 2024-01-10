@@ -5,13 +5,14 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 )
 
 // AuthCookieMiddleware(next http.Handler) http.Handler — middleware-для входящих HTTP-запросов.
 // Выдаёт пользователю симметрично подписанную куку, содержащую уникальный идентификатор пользователя,
 // если такой куки не существует или она не проходит проверку подлинности.
-func AuthCookieMiddleware(next http.Handler) http.Handler {
+func AuthCookieMiddleware(next http.Handler, conf configs.Config) http.Handler {
 	// получаем Handler приведением типа http.HandlerFunc
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
@@ -26,7 +27,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 
 		if err == nil {
 			tokenString = token.Value
-			UserID = getUserID(tokenString)
+			UserID = getUserID(conf, tokenString)
 
 			if UserID == uuid.Nil {
 				http.Error(w, "", http.StatusUnauthorized)
@@ -36,7 +37,7 @@ func AuthCookieMiddleware(next http.Handler) http.Handler {
 		} else {
 			UserID = uuid.New()
 
-			tokenString, err = buildJWTString(UserID)
+			tokenString, err = buildJWTString(conf, UserID)
 
 			if err != nil {
 				logger.Log.Error(err.Error())

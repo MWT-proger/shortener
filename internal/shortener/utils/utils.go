@@ -27,8 +27,7 @@ func StringWithCharset(length int) string {
 
 // GetBaseShortURL(host string) формирует строку.
 // пример: http://localhost:8080/
-func GetBaseShortURL(host string) string {
-	conf := configs.GetConfig()
+func GetBaseShortURL(conf configs.Config, host string) string {
 
 	if conf.BaseURLShortener != "" {
 		return fmt.Sprintf("%v/", conf.BaseURLShortener)
