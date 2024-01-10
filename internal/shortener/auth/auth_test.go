@@ -45,7 +45,7 @@ func TestBuildJWTString(t *testing.T) {
 }
 
 func BenchmarkBuildJWTString(b *testing.B) {
-	configs.InitConfig()
+	// configs.InitConfig()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		buildJWTString(uuid.New())
@@ -75,7 +75,7 @@ func TestGetUserID(t *testing.T) {
 }
 
 func BenchmarkGetUserID(b *testing.B) {
-	configs.InitConfig()
+	// configs.InitConfig()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
