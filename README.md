@@ -63,3 +63,6 @@ ________________________________________________
 
 export PATH=$(go env GOPATH)/bin:$PATH
 swag init -g internal/shortener/handlers/handlers.go -o ./docs
+
+mwtech@mwtech-G3-3579:~/Projects/shortener$ export GOPATH="$HOME/go" 
+mwtech@mwtech-G3-3579:~/Projects/shortener$ export PATH="$GOPATH/bin:$PATH"

@@ -1,5 +1,7 @@
 package handlers
 
+//go:generate mockgen -destination mock_handlers_test.go -package handlers github.com/MWT-proger/shortener/internal/shortener/handlers ShortenerServicer
+
 import (
 	"context"
 	"io"
