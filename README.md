@@ -60,9 +60,8 @@ goimports -local "github.com/MWT-proger/shortener" -w main.go
 ________________________________________________
 - [Подробней по автотестам](docs/auto_tests.md)
 - [launch.json для vscode](docs/vscode.md)
+- [рассчет покрытия тестами](docs/cover.md)
 
-export PATH=$(go env GOPATH)/bin:$PATH
-swag init -g internal/shortener/handlers/handlers.go -o ./docs
-
-mwtech@mwtech-G3-3579:~/Projects/shortener$ export GOPATH="$HOME/go" 
-mwtech@mwtech-G3-3579:~/Projects/shortener$ export PATH="$GOPATH/bin:$PATH"
+________________________________________________
+export GOPATH="$HOME/go" 
+export PATH="$GOPATH/bin:$PATH"

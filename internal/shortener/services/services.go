@@ -1,5 +1,7 @@
 package services
 
+//go:generate mockgen -destination mock_test.go -package services github.com/MWT-proger/shortener/internal/shortener/services Storager
+
 import (
 	"context"
 	"errors"
