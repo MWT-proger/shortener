@@ -24,7 +24,7 @@ type Config struct {
 
 var newConfig Config
 
-// InitConfig() Инициализирует локальную не импортируемую переменную newConfig.
+// InitConfig Инициализирует локальную не импортируемую переменную newConfig.
 // Вызывает все доступные методы получения конфигов.
 // Вызывается один раз при старте проекта.
 func InitConfig() Config {

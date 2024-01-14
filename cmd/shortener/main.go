@@ -33,7 +33,7 @@ func run(ctx context.Context) error {
 		err     error
 	)
 
-	if err := logger.Initialize(conf.LogLevel); err != nil {
+	if err = logger.Initialize(conf.LogLevel); err != nil {
 		return err
 	}
 
