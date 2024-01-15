@@ -6,6 +6,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// ExitAnalyzer Линтер запрещает вызов os.Exit в функции main
 var ExitAnalyzer = &analysis.Analyzer{
 	Name: "exitcheck",
 	Doc:  "check for direct os.Exit calls in main",

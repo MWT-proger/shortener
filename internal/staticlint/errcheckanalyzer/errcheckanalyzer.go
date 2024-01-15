@@ -7,6 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// ErrCheckAnalyzer Проверяет код на наличие не проверенных возвращаемых err.
 var ErrCheckAnalyzer = &analysis.Analyzer{
 	Name: "errcheck",
 	Doc:  "check for unchecked errors",
