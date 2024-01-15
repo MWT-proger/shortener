@@ -37,7 +37,11 @@ POSTGRES_PORT=5432
 ```
 go run ./cmd/shortener -a "localhost:7000" -d "user=postgres password=postgres host=localhost port=5432 dbname=testDB sslmode=disable" -l debug
 ```
+6. Сборка проекта с глобальными переменными
 
+```
+go build -ldflags "-X main.buildVersion=v1.0.1 -X main.buildDate=15.12.1998 -X main.buildCommit=first_commit" main.go
+```
 ## Тестирование проекта
 
 1. Benchmark 

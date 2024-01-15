@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
@@ -13,8 +14,14 @@ import (
 	"github.com/MWT-proger/shortener/internal/shortener/storage/pgstorage"
 )
 
-func main() {
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
 
+func main() {
+	printBuild()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -22,6 +29,24 @@ func main() {
 		cancel()
 		panic(err)
 	}
+}
+
+func printBuild() {
+	if buildVersion == "" {
+		buildVersion = "N/A"
+	}
+	fmt.Printf("Build version: %s\n", buildVersion)
+
+	if buildDate == "" {
+		buildDate = "N/A"
+	}
+	fmt.Printf("Build date: %s\n", buildDate)
+
+	if buildCommit == "" {
+		buildCommit = "N/A"
+	}
+	fmt.Printf("Build commit: %s\n", buildCommit)
+
 }
 
 // run() выполняет все предворительные действия и вызывает функцию запуска сервера.
