@@ -1,6 +1,7 @@
 package filestorage
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,10 +22,11 @@ func TestStorageGet(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &FileStorage{
+			s := &fileStorage{
 				tempStorage: tt.tempStorage,
 			}
-			got, _ := s.Get(tt.key)
+
+			got, _ := s.Get(context.Background(), tt.key)
 
 			assert.Equal(t, tt.want, got.FullURL, "Результат не совпадает с ожиданием")
 
@@ -45,10 +47,10 @@ func TestStorageSet(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &FileStorage{
+			s := &fileStorage{
 				tempStorage: tt.tempStorage,
 			}
-			got, _ := s.Set(tt.value)
+			got, _ := s.Set(context.Background(), tt.value)
 
 			assert.Equal(t, tt.value.FullURL, s.tempStorage[got], "Результат не совпадает с ожиданием")
 			assert.Len(t, s.tempStorage, tt.length, "Длина словаря не совпадает")

@@ -2,110 +2,43 @@ package handlers
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
-	"github.com/MWT-proger/shortener/configs"
-	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/go-chi/chi"
+	"github.com/google/uuid"
+	gomock "go.uber.org/mock/gomock"
+
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 )
 
-func ExampleAPIHandler_GetURLByKeyHandler() {
+type MockTest struct{}
 
-	m := &MockStorage{testData: map[string]string{"testKey": "https://practicum.yandex.ru/"}}
-
-	h := &APIHandler{
-		storage:     m,
-		DeletedChan: make(chan models.DeletedShortURL, 1024),
-	}
-
-	router := chi.NewRouter()
-	router.Get("/{shortKey}", h.GetURLByKeyHandler)
-
-	ts := httptest.NewServer(router)
-
-	result, _ := exampleRequest(ts, http.MethodGet, "/testKey", strings.NewReader(""))
-	defer result.Body.Close()
-	location, _ := result.Location()
-	fmt.Println(location)
-	// Output:
-	// https://practicum.yandex.ru/
-}
-
+func (m *MockTest) Errorf(format string, args ...any) {}
+func (m *MockTest) Fatalf(format string, args ...any) {}
 func ExampleAPIHandler_GenerateShortkeyHandler() {
-	configs.InitConfig()
 
-	m := &MockStorage{testData: map[string]string{"http://example-full-url.com": "testKey"}}
-	h := &APIHandler{
-		storage:     m,
-		DeletedChan: make(chan models.DeletedShortURL, 1024),
-	}
+	var (
+		ctrl        = gomock.NewController(&MockTest{})
+		mockService = NewMockShortenerServicer(ctrl)
 
-	router := chi.NewRouter()
-	router.Post("/", h.GenerateShortkeyHandler)
+		h, _ = NewAPIHandler(mockService)
 
-	ts := httptest.NewServer(router)
-	bodyRequest := strings.NewReader("http://example-full-url.com")
+		bodyRequest = strings.NewReader("http://e.com")
+		response    = httptest.NewRecorder()
+		mockReq, _  = http.NewRequest(http.MethodPost, "http://localhost", bodyRequest)
+		userID      = uuid.New()
+		ctx         = auth.WithUserID(mockReq.Context(), userID)
+	)
+	mockReq = mockReq.WithContext(ctx)
 
-	result, _ := exampleRequest(ts, http.MethodPost, "/", bodyRequest)
-	defer result.Body.Close()
-	fmt.Println(result.Status)
+	mockService.EXPECT().
+		GenerateShortURL(mockReq.Context(), userID, "http://e.com", mockReq.Host).
+		Return("http://localhost/testKey", http.StatusCreated)
+
+	h.GenerateShortkeyHandler(response, mockReq)
+	fmt.Println(response.Code)
 	// Output:
-	// 201 Created
+	// 201
 
-}
-
-func ExampleAPIHandler_JSONGenerateShortkeyHandler() {
-	configs.InitConfig()
-
-	m := &MockStorage{testData: map[string]string{"http://example-full-url.com": "testKey"}}
-	h := &APIHandler{
-		storage:     m,
-		DeletedChan: make(chan models.DeletedShortURL, 1024),
-	}
-
-	router := chi.NewRouter()
-	router.Post("/api/shorten", h.JSONGenerateShortkeyHandler)
-
-	ts := httptest.NewServer(router)
-
-	bodyRequest := strings.NewReader(`{"url": "http://example-full-url.com"}`)
-
-	result, _ := exampleRequest(ts, http.MethodPost, "/api/shorten", bodyRequest)
-	defer result.Body.Close()
-	fmt.Println(result.Status)
-	// Output:
-	// 201 Created
-
-}
-
-func exampleRequest(ts *httptest.Server, method, path string, bodyReader *strings.Reader) (*http.Response, string) {
-	req, err := http.NewRequest(method, ts.URL+path, bodyReader)
-
-	if err != nil {
-		return nil, ""
-	}
-
-	client := ts.Client()
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
-
-	resp, err := client.Do(req)
-
-	if err != nil {
-		return nil, ""
-	}
-
-	defer resp.Body.Close()
-
-	respBody, err := io.ReadAll(resp.Body)
-
-	if err != nil {
-		return nil, ""
-	}
-
-	return resp, string(respBody)
 }

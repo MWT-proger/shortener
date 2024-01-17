@@ -12,9 +12,9 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
 )
 
 func TestPgStorageGet(t *testing.T) {
@@ -48,7 +48,7 @@ func TestPgStorageGet(t *testing.T) {
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-	s := &PgStorage{
+	s := &pgStorage{
 		db: sqlxDB,
 	}
 	querySQL := "SELECT full_url, is_deleted FROM content.shorturl WHERE short_key = $1 LIMIT 1;"
@@ -67,7 +67,7 @@ func TestPgStorageGet(t *testing.T) {
 					WithArgs(tt.shortKey).
 					WillReturnRows(rows)
 			}
-			got, _ := s.Get(tt.shortKey)
+			got, _ := s.Get(context.Background(), tt.shortKey)
 
 			assert.Equal(t, got.FullURL, tt.result.FullURL, "Результат не совпадает с ожиданием")
 		})
@@ -86,7 +86,7 @@ func TestPgStorageDoSet(t *testing.T) {
 			name:        "Тест 1 - Проверяем на дубликат short_key",
 			model:       models.ShortURL{ShortKey: "testKey", FullURL: "http://example.ru", UserID: uuid.New()},
 			errorsDB:    &pgconn.PgError{Code: "23505", ConstraintName: "shorturl_short_key_key"},
-			errorString: (&lErrors.ErrorDuplicateShortKey{}).Error(),
+			errorString: lErrors.ErrorDuplicateShortKey.Error(),
 		},
 		{
 			name:        "Тест 2 - Проверяем на успех",
@@ -106,7 +106,7 @@ func TestPgStorageDoSet(t *testing.T) {
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
 
-	s := &PgStorage{
+	s := &pgStorage{
 		db: sqlxDB,
 	}
 	querySQL := "INSERT INTO content.shorturl (short_key, full_url, user_id) VALUES($1,$2,$3)"
@@ -127,7 +127,7 @@ func TestPgStorageDoSet(t *testing.T) {
 				mock.ExpectCommit()
 			}
 			ctx := context.TODO()
-			ctx = request.WithUserID(ctx, tt.model.UserID)
+			ctx = auth.WithUserID(ctx, tt.model.UserID)
 			err := s.doSet(ctx, &tt.model)
 
 			if tt.errorString != "" {

@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Сущность
+// ShortURL - служит связующим звеном между слоями сервисным и хранилища.
 type ShortURL struct {
 	ShortKey    string
 	FullURL     string
@@ -12,7 +12,7 @@ type ShortURL struct {
 	DeletedFlag bool
 }
 
-// Сущность
+// JSONShortURL - служит связующим звеном между слоями сервисным и хранилища.
 type JSONShortURL struct {
 	CorrelationID string    `json:"correlation_id,omitempty"`
 	OriginalURL   string    `json:"original_url,omitempty" db:"full_url"`
@@ -21,7 +21,7 @@ type JSONShortURL struct {
 	DeletedFlag   bool      `json:"-" db:"is_deleted"`
 }
 
-// IsValid проверяет на валидность
+// IsValid проверяет на валидность JSONShortURL.
 func (d *JSONShortURL) IsValid() bool {
 
 	if d.OriginalURL == "" || d.CorrelationID == "" {
@@ -31,17 +31,7 @@ func (d *JSONShortURL) IsValid() bool {
 	return true
 }
 
-// Сущность
-type JSONShortenRequest struct {
-	URL string `json:"url"`
-}
-
-// IsValid проверяет на валидность
-func (d *JSONShortenRequest) IsValid() bool {
-	return d.URL != ""
-}
-
-// Сущность
+// DeletedShortURL Используется при удаление строк из БД.
 type DeletedShortURL struct {
 	ID      int64
 	UserID  uuid.UUID

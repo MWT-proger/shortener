@@ -1,181 +1,108 @@
 package handlers
 
+//go:generate mockgen -destination mock_handlers_test.go -package handlers github.com/MWT-proger/shortener/internal/shortener/handlers ShortenerServicer
+
 import (
-	"encoding/json"
+	"context"
+	"io"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
-	"go.uber.org/zap"
+	"github.com/google/uuid"
 
-	"github.com/MWT-proger/shortener/internal/shortener/logger"
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/request"
-	"github.com/MWT-proger/shortener/internal/shortener/storage"
-	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
-// @Title Shortener API
-// @Description Сервис сокращения ссылок.
-// @Version 1.0
-
-// @Contact.email support@localhost.ru
-
-// @BasePath /
-// @Host localhost:7000
-
-// @SecurityDefinitions.apikey ApiKeyAuth
-// @In cookie
-// @Name token
-
-// @Tag.name Short
-// @Tag.description "API сокращения и получения ссылок"
-
-// APIHandler Структура объеденяющая все эндпоинты
+// APIHandler Структура объеденяющая все эндпоинты.
 type APIHandler struct {
-	storage     storage.OperationStorager
-	DeletedChan chan models.DeletedShortURL
-	doneCh      chan struct{}
+	shortService ShortenerServicer
 }
 
-// NewAPIHandler
-func NewAPIHandler(s storage.OperationStorager) (h *APIHandler, err error) {
+// NewAPIHandler создает новую структуру APIHandler.
+func NewAPIHandler(service ShortenerServicer) (h *APIHandler, err error) {
 	hh := &APIHandler{
-		storage:     s,
-		DeletedChan: make(chan models.DeletedShortURL, 1024),
-		doneCh:      make(chan struct{}),
+		shortService: service,
 	}
-
-	go hh.FlushDeleted()
 
 	return hh, err
 }
 
-// GetURLByKeyHandler godoc
-// @Tags Short
-// @Summary Получить полный url по ключу
-// @ID GetURLByKeyHandler
-// @Success 307 {string} string
-// @Failure 500 {string} string "Внутренняя ошибка"
-// @Router /{shortKey} [get]
-func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
+// ShortenerServicer интерфейс описывающий необходимые методы для сервисного слоя.
+type ShortenerServicer interface {
+	GetFullURLByShortKey(ctx context.Context, shortKey string) (string, error)
+	GetListUserURLs(ctx context.Context, userID uuid.UUID, requestHost string) ([]*models.JSONShortURL, error)
 
-	modelData, err := h.storage.Get(chi.URLParam(r, "shortKey"))
+	GenerateShortURL(ctx context.Context, userID uuid.UUID, fullURL string, requestHost string) (string, error)
+	GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
 
-	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-	if modelData.DeletedFlag {
-		w.WriteHeader(http.StatusGone)
-		return
-	}
-	if modelData.FullURL == "" {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Location", modelData.FullURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
 
+	PingStorage() bool
 }
 
-// GetURLByKeyHandler Возвращает список URL-адресов пользователя
-func (h *APIHandler) GetListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
+// GenerateShortkeyHandler Принимает большой URL и возвращает маленький.
+func (h *APIHandler) GenerateShortkeyHandler(w http.ResponseWriter, r *http.Request) {
 
-	userID, ok := request.UserIDFrom(r.Context())
-
-	if !ok {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	listURLs, err := h.storage.GetList(userID)
-
-	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-	if len(listURLs) == 0 {
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	baseURL := utils.GetBaseShortURL(r.Host)
-	for _, v := range listURLs {
-		v.ShortURL = baseURL + v.ShortURL
-	}
-
-	resp, err := json.Marshal(listURLs)
-	if err != nil {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-
-}
-
-// DeleteListUserURLsHandler  в теле запроса принимает
-// список идентификаторов сокращённых URL для асинхронного удаления
-// В случае успешного приёма запроса возвращает HTTP-статус 202 Accepted
-func (h *APIHandler) DeleteListUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-
-	userID, ok := request.UserIDFrom(r.Context())
-
-	if !ok {
-		http.Error(w, "", http.StatusInternalServerError)
-		return
-	}
-	var data []string
+	var (
+		finalStatusCode = http.StatusCreated
+		ctx             = r.Context()
+	)
 
 	defer r.Body.Close()
 
-	if err := h.unmarshalBody(r.Body, &data); err != nil {
+	requestBody, err := io.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	stringRequestBody := string(requestBody)
+
+	if stringRequestBody == "" {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
 
-	go func() {
+	userID, ok := auth.UserIDFrom(ctx)
 
-		for _, d := range data {
-			select {
-			case <-h.doneCh:
-				return
-			case h.DeletedChan <- models.DeletedShortURL{
-				UserID:  userID,
-				Payload: d,
-			}:
-			}
+	if !ok {
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	shortURL, err := h.shortService.GenerateShortURL(ctx, userID, stringRequestBody, r.Host)
+
+	if err != nil {
+		finalStatusCode = h.setOrGetHTTPCode(w, err)
+
+		if finalStatusCode == 0 {
+			return
 		}
-	}()
+	}
 
-	w.WriteHeader(http.StatusAccepted)
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(finalStatusCode)
+	w.Write([]byte(shortURL))
 
 }
 
-// FlushDeleted запускается в горутине и удаляет ссылки
-func (h *APIHandler) FlushDeleted() {
-	// будем удалять, накопленные за последние 10 секунд
-	ticker := time.NewTicker(10 * time.Second)
+// GetURLByKeyHandler Принимает короткий ключ и делает rederict на полный URL
+func (h *APIHandler) GetURLByKeyHandler(w http.ResponseWriter, r *http.Request) {
+	var (
+		ctx      = r.Context()
+		shortKey = chi.URLParam(r, "shortKey")
+	)
 
-	var data []models.DeletedShortURL
+	fullURL, err := h.shortService.GetFullURLByShortKey(ctx, shortKey)
 
-	for {
-		select {
-		case d := <-h.DeletedChan:
-			data = append(data, d)
-		case <-ticker.C:
-			if len(data) == 0 {
-				continue
-			}
-			err := h.storage.DeleteList(data...)
-			if err != nil {
-				logger.Log.Debug("cannot deleted shortURL", zap.Error(err))
-				continue
-			}
-			data = nil
-		}
+	if err != nil {
+		h.setHTTPError(w, err)
+		return
 	}
+
+	w.Header().Set("Location", fullURL)
+	w.WriteHeader(http.StatusTemporaryRedirect)
+
 }

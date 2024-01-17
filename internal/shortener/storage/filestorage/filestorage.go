@@ -3,27 +3,27 @@ package filestorage
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"os"
 	"time"
 
 	"github.com/google/uuid"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/errors"
+	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/models"
-	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/MWT-proger/shortener/internal/shortener/utils"
 )
 
-// FileStorage хранит в json файле
-type FileStorage struct {
-	storage.Storage
+// fileStorage хранит данные в json файле.
+type fileStorage struct {
 	tempStorage map[string]string
 }
 
-// InitJSONFile() Проверяет есть ли файл по указанному пути и если нет, создаёт его
-func (s *FileStorage) Init(ctx context.Context) error {
-	conf := configs.GetConfig()
+// NewFileStorage создаёт и возвращает новый экземпляр fileStorage.
+func NewFileStorage(ctx context.Context, conf configs.Config) (*fileStorage, error) {
+
+	s := &fileStorage{}
 
 	s.tempStorage = make(map[string]string, 0)
 	if conf.JSONFileDB != "" {
@@ -33,37 +33,33 @@ func (s *FileStorage) Init(ctx context.Context) error {
 		if err != nil {
 			str := "{}"
 			if err = os.WriteFile(conf.JSONFileDB, []byte(str), 0644); err != nil {
-				return err
+				return nil, err
 			}
 
 		} else {
 
 			if err = json.Unmarshal(content, &s.tempStorage); err != nil {
-				return err
+				return nil, err
 
 			}
 		}
 
-		go s.BackupToJSONFile(ctx)
+		go s.backupToJSONFile(ctx, conf)
 
 	}
-	return nil
-
+	return s, nil
 }
 
-// BackupToJSONFile() Делает резервное копирование переменной в файл
-func (s *FileStorage) BackupToJSONFile(ctx context.Context) error {
+// backupToJSONFile() Делает резервное копирование переменной в файл.
+func (s *fileStorage) backupToJSONFile(ctx context.Context, conf configs.Config) error {
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 
 		default:
-			// TODO: Вынести время бэкапа в конфиг
-			time.Sleep(time.Minute * 10)
-			log.Println("Старт Резервного копирования")
-
-			conf := configs.GetConfig()
+			time.Sleep(conf.TimebackupToJSONFile)
+			logger.Log.Info("старт - резервное копирование данных -> file.json")
 
 			b, err := json.Marshal(s.tempStorage)
 
@@ -72,15 +68,15 @@ func (s *FileStorage) BackupToJSONFile(ctx context.Context) error {
 			}
 
 			os.WriteFile(conf.JSONFileDB, b, 0644)
-			log.Println("Финиш Резервного копирования")
+			logger.Log.Info("финиш - резервное копирование данных -> file.json")
 
 		}
 	}
 
 }
 
-// Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *FileStorage) Set(newModel models.ShortURL) (string, error) {
+// Set Добавляет в хранилище полную ссылку и присваевает ей ключ.
+func (s *fileStorage) Set(ctx context.Context, newModel models.ShortURL) (string, error) {
 
 	newModel.ShortKey = utils.StringWithCharset(5)
 
@@ -97,8 +93,8 @@ func (s *FileStorage) Set(newModel models.ShortURL) (string, error) {
 
 }
 
-// Достаёт из хранилища и возвращает полную ссылку по ключу
-func (s *FileStorage) Get(shortURL string) (models.ShortURL, error) {
+// Get Достаёт из хранилища и возвращает полную ссылку по ключу.
+func (s *fileStorage) Get(ctx context.Context, shortURL string) (models.ShortURL, error) {
 	var model models.ShortURL
 
 	fullURL, ok := s.tempStorage[shortURL]
@@ -111,8 +107,8 @@ func (s *FileStorage) Get(shortURL string) (models.ShortURL, error) {
 	return model, nil
 }
 
-// Добавляет в хранилище полную ссылку и присваевает ей ключ
-func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
+// SetMany Добавляет в хранилище полную ссылку и присваевает ей ключ.
+func (s *fileStorage) SetMany(ctx context.Context, data []models.JSONShortURL, baseShortURL string, userID uuid.UUID) error {
 
 	for i, v := range data {
 
@@ -134,8 +130,8 @@ func (s *FileStorage) SetMany(data []models.JSONShortURL, baseShortURL string, u
 
 }
 
-// Подобие удаления
-func (s *FileStorage) DeleteList(data ...models.DeletedShortURL) error {
+// DeleteList Удаляет значение по ключам.
+func (s *fileStorage) DeleteList(ctx context.Context, data ...models.DeletedShortURL) error {
 
 	for _, v := range data {
 
@@ -147,5 +143,20 @@ func (s *FileStorage) DeleteList(data ...models.DeletedShortURL) error {
 
 	}
 
+	return nil
+}
+
+// Абстрактный метод.
+func (s fileStorage) GetList(ctx context.Context, userID uuid.UUID) ([]*models.JSONShortURL, error) {
+	return []*models.JSONShortURL{}, nil
+}
+
+// Абстрактный метод.
+func (s fileStorage) Ping() error {
+	return errors.ErrorDBNotConnection
+}
+
+// Абстрактный метод.
+func (s fileStorage) Close() error {
 	return nil
 }

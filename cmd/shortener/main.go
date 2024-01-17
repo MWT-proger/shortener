@@ -2,19 +2,26 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
-	"github.com/MWT-proger/shortener/internal/shortener/router"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
+	"github.com/MWT-proger/shortener/internal/shortener/services"
 	"github.com/MWT-proger/shortener/internal/shortener/storage"
 	"github.com/MWT-proger/shortener/internal/shortener/storage/filestorage"
 	"github.com/MWT-proger/shortener/internal/shortener/storage/pgstorage"
 )
 
-func main() {
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
 
+func main() {
+	printBuild()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -24,51 +31,58 @@ func main() {
 	}
 }
 
-// initProject() иницилизирует все необходимые переменный проекта
-func initProject(ctx context.Context) (storage.OperationStorager, error) {
-
-	var (
-		s          storage.OperationStorager
-		configInit = configs.InitConfig()
-	)
-
-	parseFlags(configInit)
-
-	conf := configs.SetConfigFromEnv()
-
-	if conf.DatabaseDSN != "" {
-		s = &pgstorage.PgStorage{}
-	} else {
-		s = &filestorage.FileStorage{}
+func printBuild() {
+	if buildVersion == "" {
+		buildVersion = "N/A"
 	}
+	fmt.Printf("Build version: %s\n", buildVersion)
 
-	if err := s.Init(ctx); err != nil {
-		return nil, err
+	if buildDate == "" {
+		buildDate = "N/A"
 	}
+	fmt.Printf("Build date: %s\n", buildDate)
 
-	if err := logger.Initialize(conf.LogLevel); err != nil {
-		return nil, err
+	if buildCommit == "" {
+		buildCommit = "N/A"
 	}
+	fmt.Printf("Build commit: %s\n", buildCommit)
 
-	return s, nil
 }
 
-// run() выполняет все предворительные действия и вызывает функцию запуска сервера
+// run() выполняет все предворительные действия и вызывает функцию запуска сервера.
 func run(ctx context.Context) error {
-	s, err := initProject(ctx)
+
+	var (
+		conf    = configs.InitConfig()
+		storage storage.OperationStorager
+		err     error
+	)
+
+	if err = logger.Initialize(conf.LogLevel); err != nil {
+		return err
+	}
+
+	if conf.DatabaseDSN != "" {
+		storage, err = pgstorage.NewPgStorage(ctx, conf)
+	} else {
+		storage, err = filestorage.NewFileStorage(ctx, conf)
+	}
 
 	if err != nil {
 		return err
 	}
 
-	defer s.Close()
+	defer storage.Close()
 
-	h, _ := handlers.NewAPIHandler(s)
-	r := router.Router(h)
+	service := services.NewShortenerService(ctx, conf, storage)
 
-	err = server.Run(r)
+	apiHandler, err := handlers.NewAPIHandler(service)
 
 	if err != nil {
+		return err
+	}
+
+	if err := server.Run(apiHandler, conf); err != nil {
 		return err
 	}
 

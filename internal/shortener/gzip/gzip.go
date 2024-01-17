@@ -4,7 +4,6 @@ import (
 	"compress/gzip"
 	"io"
 	"net/http"
-	"strings"
 )
 
 // compressWriter реализует интерфейс http.ResponseWriter и позволяет прозрачно для сервера
@@ -16,7 +15,7 @@ type compressWriter struct {
 	compressable bool
 }
 
-// new
+// newCompressWriter создает новый экземпляр compressWriter
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	return &compressWriter{
 		w:            w,
@@ -26,17 +25,18 @@ func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	}
 }
 
-// Header
+// Header возвращает сопоставление заголовков, которое будет отправлено WriteHeader.
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
-// Write
+// Writer - это интерфейс, который обертывает базовый метод записи.
 func (c *compressWriter) Write(p []byte) (int, error) {
 	return c.writer().Write(p)
 }
 
-// WriteHeader
+// WriteHeader отправляет заголовок HTTP-ответа с предоставленным кодом состояния.
+// А так же добавляет Headers "Content-Encoding" и "gzip" при удовлетворяющем "Content-Type".
 func (c *compressWriter) WriteHeader(statusCode int) {
 
 	contentType := c.w.Header().Get("Content-Type")
@@ -73,6 +73,7 @@ type compressReader struct {
 	zr *gzip.Reader
 }
 
+// newCompressReader создаёт новый экземпляр compressReader
 func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
@@ -85,47 +86,15 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
-// BUG(Андрей): мб можно сделать приватным
+// Read implements io.Reader, reading uncompressed bytes from its underlying Reader.
 func (c compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
-// BUG(Андрей): мб можно сделать приватным
+// Close закрывает Reader и gzip.Reader
 func (c *compressReader) Close() error {
 	if err := c.r.Close(); err != nil {
 		return err
 	}
 	return c.zr.Close()
-}
-
-// GzipMiddleware - сжимает при необходимости запросы
-func GzipMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var ow http.ResponseWriter
-		acceptEncoding := r.Header.Get("Accept-Encoding")
-		supportsGzip := strings.Contains(acceptEncoding, "gzip")
-
-		if supportsGzip {
-
-			cw := newCompressWriter(w)
-			ow = cw
-			defer cw.Close()
-		} else {
-			ow = w
-		}
-
-		contentEncoding := r.Header.Get("Content-Encoding")
-		if strings.Contains(contentEncoding, "gzip") {
-
-			cr, err := newCompressReader(r.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			r.Body = cr
-			defer cr.Close()
-		}
-
-		next.ServeHTTP(ow, r)
-	})
 }

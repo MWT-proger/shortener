@@ -17,14 +17,14 @@ func TestBuildJWTString(t *testing.T) {
 	}{
 		{name: "Тест 1 - успешный тест", userID: uuid.New()},
 	}
+	conf := configs.Config{Auth: configs.AuthConfig{SecretKey: "TestKey"}}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			configs.InitConfig()
-			conf := configs.GetConfig()
-			claims := &Claims{}
 
-			tokenString, err := BuildJWTString(tt.userID)
+			claims := &claims{}
+
+			tokenString, err := buildJWTString(conf, tt.userID)
 
 			assert.NoError(t, err, "Ошибка при генерации токена")
 			assert.NotNil(t, tokenString, "Токен пустой")
@@ -45,10 +45,10 @@ func TestBuildJWTString(t *testing.T) {
 }
 
 func BenchmarkBuildJWTString(b *testing.B) {
-	configs.InitConfig()
+	conf := configs.Config{Auth: configs.AuthConfig{SecretKey: "TestKey"}}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		BuildJWTString(uuid.New())
+		buildJWTString(conf, uuid.New())
 	}
 
 }
@@ -61,13 +61,14 @@ func TestGetUserID(t *testing.T) {
 	}{
 		{name: "Тест 1 - успешный тест", userID: uuid.New()},
 	}
+	conf := configs.Config{Auth: configs.AuthConfig{SecretKey: "TestKey"}}
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			configs.InitConfig()
-			tokenString, _ := BuildJWTString(tt.userID)
+			tokenString, _ := buildJWTString(conf, tt.userID)
 
-			userID := GetUserID(tokenString)
+			userID := getUserID(conf, tokenString)
 
 			assert.Equal(t, tt.userID, userID, "ID пользователя не совпадают")
 		})
@@ -75,15 +76,15 @@ func TestGetUserID(t *testing.T) {
 }
 
 func BenchmarkGetUserID(b *testing.B) {
-	configs.InitConfig()
+	conf := configs.Config{Auth: configs.AuthConfig{SecretKey: "TestKey"}}
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer() // останавливаем таймер
-		tokenString, _ := BuildJWTString(uuid.New())
+		tokenString, _ := buildJWTString(conf, uuid.New())
 		b.StartTimer() // возобновляем таймер
 
-		GetUserID(tokenString)
+		getUserID(conf, tokenString)
 	}
 
 }
