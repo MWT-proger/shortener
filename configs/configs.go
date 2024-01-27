@@ -20,6 +20,7 @@ type Config struct {
 	DatabaseDSN          string `env:"DATABASE_DSN"`
 	Auth                 AuthConfig
 	TimebackupToJSONFile time.Duration
+	EnableHTTPS          bool `env:"ENABLE_HTTPS"`
 }
 
 var newConfig Config
@@ -47,6 +48,7 @@ func initDefaultConfig() {
 		DatabaseDSN:          "",
 		Auth:                 AuthConfig{SecretKey: "supersecretkey"},
 		TimebackupToJSONFile: time.Minute * 10,
+		EnableHTTPS:          false,
 	}
 
 }
@@ -60,6 +62,7 @@ func parseFlags() {
 	flag.StringVar(&newConfig.JSONFileDB, "f", newConfig.JSONFileDB, "полное имя файла, куда сохраняются данные в формате JSON")
 	flag.StringVar(&newConfig.BaseURLShortener, "b", newConfig.BaseURLShortener, "базовый URl  который будет использоваться для короткой ссылки")
 	flag.StringVar(&newConfig.LogLevel, "l", "info", "уровень логирования")
+	flag.BoolVar(&newConfig.EnableHTTPS, "s", newConfig.EnableHTTPS, "включить HTTPS")
 	flag.Parse()
 }
 
@@ -84,6 +87,9 @@ func setConfigFromEnv() Config {
 	}
 	if envSecretKey := os.Getenv("SECRET_KEY"); envSecretKey != "" {
 		newConfig.Auth.SecretKey = envSecretKey
+	}
+	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
+		newConfig.EnableHTTPS = true
 	}
 	return newConfig
 }

@@ -3,6 +3,7 @@ package configs
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ func TestInitConfig(t *testing.T) {
 			DatabaseDSN:          "",
 			Auth:                 AuthConfig{SecretKey: "supersecretkey"},
 			TimebackupToJSONFile: time.Minute * 10,
+			EnableHTTPS:          false,
 		}},
 	}
 	for _, tt := range tests {
@@ -46,6 +48,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 				`localhost`, `postgres`, `postgres`, `testDB`),
 			Auth:                 AuthConfig{SecretKey: "NewSuperSecretKeyTEEEEEEEEEEST"},
 			TimebackupToJSONFile: time.Minute * 10,
+			EnableHTTPS:          true,
 		}},
 	}
 	for _, tt := range tests {
@@ -57,6 +60,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			os.Setenv("FILE_STORAGE_PATH", tt.want.JSONFileDB)
 			os.Setenv("DATABASE_DSN", tt.want.DatabaseDSN)
 			os.Setenv("SECRET_KEY", tt.want.Auth.SecretKey)
+			os.Setenv("ENABLE_HTTPS", strconv.FormatBool(tt.want.EnableHTTPS))
 			setConfigFromEnv()
 			assert.Equal(t, tt.want, newConfig, "newConfig не совпадает с ожидаемым")
 		})
