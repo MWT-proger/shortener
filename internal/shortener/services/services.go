@@ -135,8 +135,6 @@ func (s *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.U
 	go func() {
 		for _, d := range data {
 			select {
-			case <-ctx.Done():
-				return
 			case <-s.doneCh:
 				return
 			case s.deletedChan <- models.DeletedShortURL{
@@ -159,6 +157,11 @@ func (s *ShortenerService) flushDeleted(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+
+			for len(s.deletedChan) > 0 {
+				d := <-s.deletedChan
+				data = append(data, d)
+			}
 
 			if len(data) != 0 {
 				if err := s.storage.DeleteList(ctx, data...); err != nil {
