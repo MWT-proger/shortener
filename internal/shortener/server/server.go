@@ -19,12 +19,13 @@ func Run(ctx context.Context, h Handler, conf configs.Config) error {
 	}
 	logger.Log.Info("Running server on", logger.StringField("host", conf.HostServer))
 
-	context.AfterFunc(ctx, func() {
+	go func() {
+		<-ctx.Done()
 		logger.Log.Info("Stopping server on", logger.StringField("host", conf.HostServer))
 		if err := server.Shutdown(ctx); err != nil {
 			logger.Log.Error("HTTP server Shutdown", logger.ErrorField(err))
 		}
-	})
+	}()
 
 	if conf.EnableHTTPS {
 		manager := &autocert.Manager{
