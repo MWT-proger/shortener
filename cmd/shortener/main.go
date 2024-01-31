@@ -53,10 +53,13 @@ func printBuild() {
 func run(ctx context.Context) error {
 
 	var (
-		conf    = configs.InitConfig()
-		storage storage.OperationStorager
-		err     error
+		conf, err = configs.NewConfig()
+		storage   storage.OperationStorager
 	)
+
+	if err != nil {
+		return err
+	}
 
 	if err = logger.Initialize(conf.LogLevel); err != nil {
 		return err

@@ -1,95 +1,179 @@
 package configs
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"os"
+	"reflect"
+	"strconv"
 	"time"
 )
 
 // AuthConfig Конфигурация авторизации.
 type AuthConfig struct {
-	SecretKey string
+	SecretKey string `default:"supersecretkey"`
 }
 
 // Config Общая конфигурация сервиса.
 type Config struct {
-	HostServer           string `env:"SERVER_ADDRESS"`
-	BaseURLShortener     string `env:"BASE_URL"`
-	LogLevel             string
-	JSONFileDB           string
-	DatabaseDSN          string `env:"DATABASE_DSN"`
-	Auth                 AuthConfig
-	TimebackupToJSONFile time.Duration
-	EnableHTTPS          bool `env:"ENABLE_HTTPS"`
+	HostServer           string        `default:":8080" env:"SERVER_ADDRESS" json:"server_address"`
+	BaseURLShortener     string        `default:"" env:"BASE_URL" json:"base_url"`
+	LogLevel             string        `default:"info"`
+	JSONFileDB           string        `default:"/tmp/short-url-db.json" json:"file_storage_path"`
+	DatabaseDSN          string        `default:"" env:"DATABASE_DSN" json:"database_dsn"`
+	TimebackupToJSONFile time.Duration `default:"600000000000"`
+	EnableHTTPS          bool          `env:"ENABLE_HTTPS" json:"enable_https"`
+	ConfigJSON           string        `env:"CONFIG"`
+
+	Auth AuthConfig
 }
 
-var newConfig Config
+// NewConfig Создаёи и возвращает новый объект Config
+// Вызывает все доступные методы(в порядке как указано):
+// setValuesFromFlags - обрабатывает аргументы командной строки;
+// setValuesFromEnv - обрабатывает переменные окружения;
+// setValuesFromJSONFile - обрабатывает поля из JSONFile;
+// setValuesDefaultIfNil - обрабатывает тег default.
+func NewConfig() (Config, error) {
+	cfg := Config{}
 
-// InitConfig Инициализирует локальную не импортируемую переменную newConfig.
-// Вызывает все доступные методы получения конфигов.
-// Вызывается один раз при старте проекта.
-func InitConfig() Config {
+	cfg.setValuesFromFlags()
+	cfg.setValuesFromEnv()
 
-	initDefaultConfig()
-	parseFlags()
-	setConfigFromEnv()
-
-	return newConfig
-}
-
-// initDefaultConfig() Присваивает локальной не импортируемой переменной newConfig базовые значения..
-// Вызывается один раз при старте проекта.
-func initDefaultConfig() {
-	newConfig = Config{
-		HostServer:           ":8080",
-		BaseURLShortener:     "",
-		JSONFileDB:           "/tmp/short-url-db.json",
-		LogLevel:             "info",
-		DatabaseDSN:          "",
-		Auth:                 AuthConfig{SecretKey: "supersecretkey"},
-		TimebackupToJSONFile: time.Minute * 10,
-		EnableHTTPS:          false,
+	if err := cfg.setValuesFromJSONFile(); err != nil {
+		return cfg, err
 	}
 
+	setValuesDefaultIfNil(&cfg)
+
+	return cfg, nil
 }
 
-// parseFlags обрабатывает аргументы командной строки.
-// и сохраняет их значения в соответствующих переменных.
-func parseFlags() {
+// setValuesFromFlags обрабатывает аргументы командной строки,
+// и сохраняет их значения в соответствующих переменных структуры.
+func (cfg *Config) setValuesFromFlags() {
 
-	flag.StringVar(&newConfig.HostServer, "a", newConfig.HostServer, "адрес и порт для запуска сервера")
-	flag.StringVar(&newConfig.DatabaseDSN, "d", newConfig.DatabaseDSN, "строка с адресом подключения к БД")
-	flag.StringVar(&newConfig.JSONFileDB, "f", newConfig.JSONFileDB, "полное имя файла, куда сохраняются данные в формате JSON")
-	flag.StringVar(&newConfig.BaseURLShortener, "b", newConfig.BaseURLShortener, "базовый URl  который будет использоваться для короткой ссылки")
-	flag.StringVar(&newConfig.LogLevel, "l", "info", "уровень логирования")
-	flag.BoolVar(&newConfig.EnableHTTPS, "s", newConfig.EnableHTTPS, "включить HTTPS")
+	flag.StringVar(&cfg.HostServer, "a", cfg.HostServer, "адрес и порт для запуска сервера")
+	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "строка с адресом подключения к БД")
+	flag.StringVar(&cfg.JSONFileDB, "f", cfg.JSONFileDB, "полное имя файла, куда сохраняются данные в формате JSON")
+	flag.StringVar(&cfg.BaseURLShortener, "b", cfg.BaseURLShortener, "базовый URl  который будет использоваться для короткой ссылки")
+	flag.StringVar(&cfg.LogLevel, "l", cfg.LogLevel, "уровень логирования")
+	flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "включить HTTPS")
+	flag.StringVar(&cfg.ConfigJSON, "c", cfg.ConfigJSON, "JSON конфигурации приложения")
+	flag.StringVar(&cfg.ConfigJSON, "config", cfg.ConfigJSON, "JSON конфигурации приложения")
+
 	flag.Parse()
 }
 
-// setConfigFromEnv() Прсваевает полям значения из ENV.
-// Вызывается один раз при старте проекта.
-func setConfigFromEnv() Config {
+// setValuesFromEnv() обрабатывает переменные окружения,
+// и сохраняет их значения в соответствующих переменных структуры.
+func (cfg *Config) setValuesFromEnv() {
 
 	if envBaseURLShortener := os.Getenv("SERVER_ADDRESS"); envBaseURLShortener != "" {
-		newConfig.HostServer = envBaseURLShortener
+		cfg.HostServer = envBaseURLShortener
 	}
 	if envBaseURL := os.Getenv("BASE_URL"); envBaseURL != "" {
-		newConfig.BaseURLShortener = envBaseURL
+		cfg.BaseURLShortener = envBaseURL
 	}
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
-		newConfig.LogLevel = envLogLevel
+		cfg.LogLevel = envLogLevel
 	}
 	if envJSONFileDB := os.Getenv("FILE_STORAGE_PATH"); envJSONFileDB != "" {
-		newConfig.JSONFileDB = envJSONFileDB
+		cfg.JSONFileDB = envJSONFileDB
 	}
 	if envDatabaseDSN := os.Getenv("DATABASE_DSN"); envDatabaseDSN != "" {
-		newConfig.DatabaseDSN = envDatabaseDSN
+		cfg.DatabaseDSN = envDatabaseDSN
 	}
 	if envSecretKey := os.Getenv("SECRET_KEY"); envSecretKey != "" {
-		newConfig.Auth.SecretKey = envSecretKey
+		cfg.Auth.SecretKey = envSecretKey
 	}
-	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS != "" {
-		newConfig.EnableHTTPS = true
+	if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS == "1" || envEnableHTTPS == "true" || envEnableHTTPS == "True" {
+		cfg.EnableHTTPS = true
+	} else if envEnableHTTPS := os.Getenv("ENABLE_HTTPS"); envEnableHTTPS == "0" || envEnableHTTPS == "false" || envEnableHTTPS == "False" {
+		cfg.EnableHTTPS = false
 	}
-	return newConfig
+	if envConfigJSON := os.Getenv("CONFIG"); envConfigJSON != "" {
+		cfg.ConfigJSON = envConfigJSON
+	}
+}
+
+// setValuesFromJSONFile() обрабатывает поля из JSONFile,
+// и сохраняет их значения в соответствующих переменных структуры.
+// Возвращает объект Config.
+func getValuesFromJSONFile(pathConfigJSON string) (*Config, error) {
+
+	content, err := os.ReadFile(pathConfigJSON)
+	configJSON := Config{}
+
+	if err != nil {
+		return nil, errors.New(pathConfigJSON + " указанный файл конфигурации не существует.")
+	}
+
+	if err = json.Unmarshal(content, &configJSON); err != nil {
+		return nil, errors.New(pathConfigJSON + " не верный формат JSON.")
+	}
+
+	return &configJSON, nil
+}
+
+// setValuesFromJSONFile() обрабатывает поля из JSONFile,
+// и сохраняет их значения в соответствующих переменных структуры.
+// ТОЛЬКО при условие что у полей структуры нулевые значения.
+func (cfg *Config) setValuesFromJSONFile() error {
+
+	if cfg.ConfigJSON != "" {
+		configJSON, err := getValuesFromJSONFile(cfg.ConfigJSON)
+
+		if err != nil {
+			return err
+		}
+
+		valueConfig := reflect.ValueOf(cfg).Elem()
+		valueConfigJSON := reflect.ValueOf(configJSON).Elem()
+
+		for i := 0; i < valueConfig.NumField(); i++ {
+			field := valueConfig.Field(i)
+			fieldJSON := valueConfigJSON.Field(i)
+
+			if field.IsZero() && !fieldJSON.IsZero() {
+				field.Set(fieldJSON)
+			}
+		}
+	}
+	return nil
+}
+
+// setValuesDefaultIfNil() обрабатывает тег default,
+// и сохраняет их значения в соответствующих переменных структуры.
+// ТОЛЬКО при условие что у полей структуры нулевые значения.
+func setValuesDefaultIfNil(cfg interface{}) {
+	v := reflect.ValueOf(cfg).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		tag := t.Field(i).Tag.Get("default")
+
+		if tag == "" && field.Kind() != reflect.Struct {
+			continue
+		}
+		switch field.Kind() {
+
+		case reflect.Struct:
+			setValuesDefaultIfNil(field.Addr().Interface())
+
+		case reflect.String:
+			if field.String() == "" {
+				field.SetString(tag)
+			}
+		case reflect.Int64:
+			if field.Int() == 0 {
+				if intValue, err := strconv.ParseInt(tag, 10, 64); err == nil {
+					field.SetInt(intValue)
+				}
+			}
+
+		}
+	}
 }
