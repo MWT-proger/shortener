@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os/signal"
 	"syscall"
 	"time"
@@ -34,7 +36,11 @@ func main() {
 	if err := run(ctx); err != nil {
 		cancel()
 		time.Sleep(time.Second * 5)
-		panic(err)
+		if !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
+		logger.Log.Info("Успешное завершение сервера")
+
 	}
 }
 
