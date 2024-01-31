@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
@@ -22,11 +25,15 @@ var (
 
 func main() {
 	printBuild()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	if err := run(ctx); err != nil {
 		cancel()
+		time.Sleep(time.Second * 5)
 		panic(err)
 	}
 }
@@ -85,7 +92,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	if err := server.Run(apiHandler, conf); err != nil {
+	if err := server.Run(ctx, apiHandler, conf); err != nil {
 		return err
 	}
 

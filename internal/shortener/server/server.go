@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 
 	"golang.org/x/crypto/acme/autocert"
@@ -10,30 +11,31 @@ import (
 )
 
 // Run() запускает сервер и слушает его по указанному хосту.
-func Run(h Handler, conf configs.Config) error {
+func Run(ctx context.Context, h Handler, conf configs.Config) error {
 	r := initRouter(conf, h)
-
+	server := http.Server{
+		Handler: r,
+		Addr:    conf.HostServer,
+	}
 	logger.Log.Info("Running server on", logger.StringField("host", conf.HostServer))
 
+	context.AfterFunc(ctx, func() {
+		logger.Log.Info("Stopping server on", logger.StringField("host", conf.HostServer))
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Log.Error("HTTP server Shutdown", logger.ErrorField(err))
+		}
+	})
+
 	if conf.EnableHTTPS {
-		// конструируем менеджер TLS-сертификатов
 		manager := &autocert.Manager{
-			// директория для хранения сертификатов
-			Cache: autocert.DirCache("cache-dir"),
-			// функция, принимающая Terms of Service издателя сертификатов
-			Prompt: autocert.AcceptTOS,
-			// перечень доменов, для которых будут поддерживаться сертификаты
+			Cache:      autocert.DirCache("cache-dir"),
+			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(conf.HostServer),
 		}
-		// конструируем сервер с поддержкой TLS
-		server := &http.Server{
-			Addr:    ":443",
-			Handler: r,
-			// для TLS-конфигурации используем менеджер сертификатов
-			TLSConfig: manager.TLSConfig(),
-		}
+		server.Addr = ":443"
+		server.TLSConfig = manager.TLSConfig()
 		return server.ListenAndServeTLS("", "")
 	}
 
-	return http.ListenAndServe(conf.HostServer, r)
+	return server.ListenAndServe()
 }
