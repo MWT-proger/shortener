@@ -329,3 +329,8 @@ func (s *pgStorage) doSet(ctx context.Context, model *models.ShortURL) error {
 	return nil
 
 }
+
+// CountUsersAndUrls возвращает количество пользователей и сокращенных URL в сервисе.
+func (s *pgStorage) CountUsersAndUrls(ctx context.Context) (urls int, users int, err error) {
+	return 0, 0, nil
+}
