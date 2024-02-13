@@ -1,7 +1,10 @@
 package auth
 
 import (
+	"fmt"
+	"net"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 
@@ -54,4 +57,51 @@ func AuthCookieMiddleware(next http.Handler, conf configs.Config) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// CheckIncludedSubNetMiddleware — middleware-для входящих HTTP-запросов.
+// Проверяет что переданный в заголовке запроса X-Real-IP IP-адрес клиента входит в доверенную подсеть,
+// в противном случае возвращает статус ответа 403 Forbidden.
+func CheckIPIncludedSubNetMiddleware(next http.Handler, conf configs.Config) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		if conf.Auth.TrustedSubNet == "" {
+			http.Error(w, "IP-адрес клиента не входит в доверенную подсеть", http.StatusForbidden)
+			return
+		}
+
+		ip, err := resolveIP(r)
+		fmt.Println(ip)
+		if err != nil {
+			http.Error(w, "IP-адрес клиента не входит в доверенную подсеть", http.StatusForbidden)
+			return
+		}
+
+		if !strings.Contains(conf.Auth.TrustedSubNet, ip.String()) {
+			http.Error(w, "IP-адрес клиента не входит в доверенную подсеть", http.StatusForbidden)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func resolveIP(r *http.Request) (net.IP, error) {
+	ipStr := r.Header.Get("X-Real-IP")
+	ip := net.ParseIP(ipStr)
+
+	if ip != nil {
+		return ip, nil
+	}
+
+	ips := r.Header.Get("X-Forwarded-For")
+	ipStrs := strings.Split(ips, ",")
+	ipStr = ipStrs[0]
+	ip = net.ParseIP(ipStr)
+
+	if ip != nil {
+		return nil, fmt.Errorf("failed parse ip from http header")
+	}
+	return ip, nil
 }

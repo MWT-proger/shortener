@@ -41,6 +41,22 @@ func (m *MockStorager) EXPECT() *MockStoragerMockRecorder {
 	return m.recorder
 }
 
+// CountUsersAndUrls mocks base method.
+func (m *MockStorager) CountUsersAndUrls(arg0 context.Context) (int, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountUsersAndUrls", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// CountUsersAndUrls indicates an expected call of CountUsersAndUrls.
+func (mr *MockStoragerMockRecorder) CountUsersAndUrls(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountUsersAndUrls", reflect.TypeOf((*MockStorager)(nil).CountUsersAndUrls), arg0)
+}
+
 // DeleteList mocks base method.
 func (m *MockStorager) DeleteList(arg0 context.Context, arg1 ...models.DeletedShortURL) error {
 	m.ctrl.T.Helper()

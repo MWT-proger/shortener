@@ -12,7 +12,8 @@ import (
 
 // AuthConfig Конфигурация авторизации.
 type AuthConfig struct {
-	SecretKey string `default:"supersecretkey"`
+	SecretKey     string `default:"supersecretkey"`
+	TrustedSubNet string `json:"trusted_subnet" env:"TRUSTED_SUBNET"`
 }
 
 // Config Общая конфигурация сервиса.
@@ -53,12 +54,12 @@ func NewConfig() (Config, error) {
 // setValuesFromFlags обрабатывает аргументы командной строки,
 // и сохраняет их значения в соответствующих переменных структуры.
 func (cfg *Config) setValuesFromFlags() {
-
 	flag.StringVar(&cfg.HostServer, "a", cfg.HostServer, "адрес и порт для запуска сервера")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "строка с адресом подключения к БД")
 	flag.StringVar(&cfg.JSONFileDB, "f", cfg.JSONFileDB, "полное имя файла, куда сохраняются данные в формате JSON")
 	flag.StringVar(&cfg.BaseURLShortener, "b", cfg.BaseURLShortener, "базовый URl  который будет использоваться для короткой ссылки")
 	flag.StringVar(&cfg.LogLevel, "l", cfg.LogLevel, "уровень логирования")
+	flag.StringVar(&cfg.Auth.TrustedSubNet, "t", cfg.Auth.TrustedSubNet, "строковое представление бесклассовой адресации (CIDR)")
 	flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "включить HTTPS")
 	flag.StringVar(&cfg.ConfigJSON, "c", cfg.ConfigJSON, "JSON конфигурации приложения")
 	flag.StringVar(&cfg.ConfigJSON, "config", cfg.ConfigJSON, "JSON конфигурации приложения")
@@ -78,6 +79,9 @@ func (cfg *Config) setValuesFromEnv() {
 	}
 	if envLogLevel := os.Getenv("LOG_LEVEL"); envLogLevel != "" {
 		cfg.LogLevel = envLogLevel
+	}
+	if envTrustedSubNet := os.Getenv("TRUSTED_SUBNET"); envTrustedSubNet != "" {
+		cfg.Auth.TrustedSubNet = envTrustedSubNet
 	}
 	if envJSONFileDB := os.Getenv("FILE_STORAGE_PATH"); envJSONFileDB != "" {
 		cfg.JSONFileDB = envJSONFileDB

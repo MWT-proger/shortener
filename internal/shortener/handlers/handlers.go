@@ -1,6 +1,6 @@
 package handlers
 
-//go:generate mockgen -destination mock_handlers_test.go -package handlers github.com/MWT-proger/shortener/internal/shortener/handlers ShortenerServicer
+//go:generate mockgen -destination mock_test.go -package handlers github.com/MWT-proger/shortener/internal/shortener/handlers ShortenerServicer
 
 import (
 	"context"
@@ -37,6 +37,7 @@ type ShortenerServicer interface {
 	GenerateMultyShortURL(ctx context.Context, userID uuid.UUID, data []models.JSONShortURL, requestHost string) error
 
 	DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string)
+	GetStats(ctx context.Context) (urls int, users int, err error)
 
 	PingStorage() bool
 }

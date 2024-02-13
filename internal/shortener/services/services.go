@@ -23,6 +23,7 @@ type Storager interface {
 	Get(ctx context.Context, shortURL string) (models.ShortURL, error)
 	GetList(ctx context.Context, userID uuid.UUID) ([]*models.JSONShortURL, error)
 	DeleteList(ctx context.Context, data ...models.DeletedShortURL) error
+	CountUsersAndUrls(ctx context.Context) (urls int, users int, err error)
 
 	Ping() error
 }
@@ -144,6 +145,19 @@ func (s *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.U
 			}
 		}
 	}()
+
+}
+
+// GetStats возвращает количество пользователей и сокращенных URL в сервисе.
+func (s *ShortenerService) GetStats(ctx context.Context) (urls int, users int, err error) {
+
+	urls, users, err = s.storage.CountUsersAndUrls(ctx)
+
+	if err != nil {
+		return 0, 0, lErrors.InternalServicesError
+	}
+
+	return urls, users, nil
 
 }
 

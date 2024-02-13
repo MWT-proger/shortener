@@ -172,3 +172,8 @@ func (s fileStorage) Ping() error {
 func (s fileStorage) Close() error {
 	return nil
 }
+
+// CountUsersAndUrls возвращает количество пользователей и сокращенных URL в сервисе.
+func (s fileStorage) CountUsersAndUrls(ctx context.Context) (urls int, users int, err error) {
+	return 0, 0, nil
+}
