@@ -17,13 +17,13 @@ type AuthConfig struct {
 
 // Config Общая конфигурация сервиса.
 type Config struct {
-	HostServer           string        `default:":8080" env:"SERVER_ADDRESS" json:"server_address"`
-	BaseURLShortener     string        `default:"" env:"BASE_URL" json:"base_url"`
+	HostServer           string        `json:"server_address" default:":8080" env:"SERVER_ADDRESS"`
+	BaseURLShortener     string        `json:"base_url" default:"" env:"BASE_URL"`
 	LogLevel             string        `default:"info"`
-	JSONFileDB           string        `default:"/tmp/short-url-db.json" json:"file_storage_path"`
-	DatabaseDSN          string        `default:"" env:"DATABASE_DSN" json:"database_dsn"`
+	JSONFileDB           string        `json:"file_storage_path" default:"/tmp/short-url-db.json"`
+	DatabaseDSN          string        `json:"database_dsn" default:"" env:"DATABASE_DSN"`
 	TimebackupToJSONFile time.Duration `default:"600000000000"`
-	EnableHTTPS          bool          `env:"ENABLE_HTTPS" json:"enable_https"`
+	EnableHTTPS          bool          `json:"enable_https" env:"ENABLE_HTTPS"`
 	ConfigJSON           string        `env:"CONFIG"`
 
 	Auth AuthConfig

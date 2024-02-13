@@ -37,7 +37,7 @@ func main() {
 		cancel()
 		time.Sleep(time.Second * 5)
 		if !errors.Is(err, http.ErrServerClosed) {
-			panic(err)
+			logger.Log.Error("Сервер остановлен из за критичиской ошибки", logger.ErrorField(err))
 		}
 		logger.Log.Info("Успешное завершение сервера")
 
