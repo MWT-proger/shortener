@@ -21,6 +21,7 @@ type Handler interface {
 	JSONGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
 	JSONMultyGenerateShortkeyHandler(w http.ResponseWriter, r *http.Request)
 	PingDB(w http.ResponseWriter, r *http.Request)
+	GetStats(w http.ResponseWriter, r *http.Request)
 }
 
 // initRouter() инициализирует и возвращает маршрутизатор.
@@ -31,6 +32,13 @@ func initRouter(conf configs.Config, h Handler) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(logger.RequestLoggerMiddleware)
 		r.Use(gzip.GzipMiddleware)
+
+		r.Group(func(r chi.Router) {
+			r.Use(func(next http.Handler) http.Handler {
+				return auth.CheckIPIncludedSubNetMiddleware(next, conf)
+			})
+			r.Get("/api/internal/statsn", h.GetStats)
+		})
 
 		r.Use(func(next http.Handler) http.Handler {
 			return auth.AuthCookieMiddleware(next, conf)
@@ -46,6 +54,7 @@ func initRouter(conf configs.Config, h Handler) *chi.Mux {
 		r.Post("/api/shorten/batch", h.JSONMultyGenerateShortkeyHandler)
 
 		r.Get("/ping", h.PingDB)
+
 	})
 
 	r.Mount("/debug", middleware.Profiler())

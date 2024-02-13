@@ -22,11 +22,10 @@ func TestNewConfig(t *testing.T) {
 
 			TimebackupToJSONFile: time.Minute * 10,
 			EnableHTTPS:          false,
-
-			Auth: AuthConfig{SecretKey: "supersecretkey"},
+			Auth:                 AuthConfig{SecretKey: "supersecretkey", TrustedSubNet: "0.0.0.0"},
 		}},
 	}
-	os.Args = []string{"test", "-l", "debug", "-s", "true"}
+	os.Args = []string{"test", "-l", "debug", "-t", "0.0.0.0", "-s", "true"}
 	os.Setenv("ENABLE_HTTPS", "false")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
