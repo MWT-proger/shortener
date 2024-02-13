@@ -133,7 +133,6 @@ func (s *ShortenerService) GetListUserURLs(ctx context.Context, userID uuid.UUID
 func (s *ShortenerService) DeleteListUserURLs(ctx context.Context, userID uuid.UUID, data []string) {
 
 	go func() {
-
 		for _, d := range data {
 			select {
 			case <-s.doneCh:
@@ -157,6 +156,21 @@ func (s *ShortenerService) flushDeleted(ctx context.Context) {
 
 	for {
 		select {
+		case <-ctx.Done():
+
+			for len(s.deletedChan) > 0 {
+				d := <-s.deletedChan
+				data = append(data, d)
+			}
+
+			if len(data) != 0 {
+				if err := s.storage.DeleteList(ctx, data...); err != nil {
+					logger.Log.Debug("cannot deleted shortURL", logger.ErrorField(err))
+				}
+			}
+			logger.Log.Info("Завершение удаления ссылок - ОК")
+			return
+
 		case d := <-s.deletedChan:
 			data = append(data, d)
 		case <-ticker.C:

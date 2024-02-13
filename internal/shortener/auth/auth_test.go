@@ -65,7 +65,7 @@ func TestGetUserID(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			configs.InitConfig()
+
 			tokenString, _ := buildJWTString(conf, tt.userID)
 
 			userID := getUserID(conf, tokenString)

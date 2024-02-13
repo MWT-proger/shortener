@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/MWT-proger/shortener/configs"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
@@ -22,12 +27,20 @@ var (
 
 func main() {
 	printBuild()
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer stop()
+
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	if err := run(ctx); err != nil {
 		cancel()
-		panic(err)
+		time.Sleep(time.Second * 5)
+		if !errors.Is(err, http.ErrServerClosed) {
+			logger.Log.Error("Сервер остановлен из за критичиской ошибки", logger.ErrorField(err))
+		}
+		logger.Log.Info("Успешное завершение сервера")
+
 	}
 }
 
@@ -53,10 +66,13 @@ func printBuild() {
 func run(ctx context.Context) error {
 
 	var (
-		conf    = configs.InitConfig()
-		storage storage.OperationStorager
-		err     error
+		conf, err = configs.NewConfig()
+		storage   storage.OperationStorager
 	)
+
+	if err != nil {
+		return err
+	}
 
 	if err = logger.Initialize(conf.LogLevel); err != nil {
 		return err
@@ -82,7 +98,7 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	if err := server.Run(apiHandler, conf); err != nil {
+	if err := server.Run(ctx, apiHandler, conf); err != nil {
 		return err
 	}
 

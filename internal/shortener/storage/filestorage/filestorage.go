@@ -44,35 +44,47 @@ func NewFileStorage(ctx context.Context, conf configs.Config) (*fileStorage, err
 			}
 		}
 
-		go s.backupToJSONFile(ctx, conf)
+		go s.workerBackupToJSONFile(ctx, conf)
 
 	}
 	return s, nil
 }
 
-// backupToJSONFile() Делает резервное копирование переменной в файл.
-func (s *fileStorage) backupToJSONFile(ctx context.Context, conf configs.Config) error {
+// workerBackupToJSONFile() Запускается в gorutine и делаем бэкап по истечению таймера.
+func (s *fileStorage) workerBackupToJSONFile(ctx context.Context, conf configs.Config) error {
+	ticker := time.NewTicker(conf.TimebackupToJSONFile)
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
-
-		default:
-			time.Sleep(conf.TimebackupToJSONFile)
-			logger.Log.Info("старт - резервное копирование данных -> file.json")
-
-			b, err := json.Marshal(s.tempStorage)
-
-			if err != nil {
+			if err := s.backupToJSONFile(ctx, conf); err != nil {
 				return err
 			}
+			return nil
 
-			os.WriteFile(conf.JSONFileDB, b, 0644)
-			logger.Log.Info("финиш - резервное копирование данных -> file.json")
-
+		case <-ticker.C:
+			if err := s.backupToJSONFile(ctx, conf); err != nil {
+				return err
+			}
 		}
 	}
 
+}
+
+// backupToJSONFile() Делает резервное копирование переменной в файл.
+func (s *fileStorage) backupToJSONFile(ctx context.Context, conf configs.Config) error {
+	logger.Log.Info("старт - резервное копирование данных -> file.json")
+
+	b, err := json.Marshal(s.tempStorage)
+
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(conf.JSONFileDB, b, 0644)
+	logger.Log.Info("финиш - резервное копирование данных -> file.json")
+
+	return nil
 }
 
 // Set Добавляет в хранилище полную ссылку и присваевает ей ключ.
