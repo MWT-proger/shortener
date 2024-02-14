@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package server;
+
+option go_package = "github.com/MWT-proger/shortener/internal/shortener/grpc/proto";
+
+
+  message GenerateShortKeyRequest {
+    string url = 1;
+  }
+  
+  message GenerateShortKeyResponse {
+    string result = 1;
+    string error = 2;
+  }
+
+  message GetFullURLByShortKeyRequest {
+    string short_key = 1;
+  }
+  
+  message GetFullURLByShortKeyResponse {
+    string full_url = 1;
+    string error = 2;
+  }
+
+  message URL {
+    string original_url = 1; 
+    string short_url = 2; 
+  }
+
+  message GetListUserURLsRequest {
+    string short_key = 1;
+  }
+  
+  message GetListUserURLsResponse {
+    repeated URL urls = 1;
+    string error = 2;
+  }
+
+  message DeleteListUserURLsRequest {
+    repeated string short_keys = 1;
+  }
+  
+  message DeleteListUserURLsResponse {
+    string error = 1;
+  }
+ 
+  service Shortener {
+    rpc GenerateShortKey(GenerateShortKeyRequest) returns (GenerateShortKeyResponse);
+    rpc GetFullURLByShortKey(GetFullURLByShortKeyRequest) returns (GetFullURLByShortKeyResponse);
+    rpc GetListUserURLs(GetListUserURLsRequest) returns (GetListUserURLsResponse);
+    rpc DeleteListUserURLs(DeleteListUserURLsRequest) returns (DeleteListUserURLsResponse);
+  }
+  

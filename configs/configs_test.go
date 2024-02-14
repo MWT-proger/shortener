@@ -23,6 +23,7 @@ func TestNewConfig(t *testing.T) {
 			TimebackupToJSONFile: time.Minute * 10,
 			EnableHTTPS:          false,
 			Auth:                 AuthConfig{SecretKey: "supersecretkey", TrustedSubNet: "0.0.0.0"},
+			RunGRPC:              false,
 		}},
 	}
 	os.Args = []string{"test", "-l", "debug", "-t", "0.0.0.0", "-s", "true"}

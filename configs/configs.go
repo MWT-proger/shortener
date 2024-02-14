@@ -27,7 +27,8 @@ type Config struct {
 	EnableHTTPS          bool          `json:"enable_https" env:"ENABLE_HTTPS"`
 	ConfigJSON           string        `env:"CONFIG"`
 
-	Auth AuthConfig
+	Auth    AuthConfig
+	RunGRPC bool
 }
 
 // NewConfig Создаёи и возвращает новый объект Config
@@ -63,6 +64,7 @@ func (cfg *Config) setValuesFromFlags() {
 	flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "включить HTTPS")
 	flag.StringVar(&cfg.ConfigJSON, "c", cfg.ConfigJSON, "JSON конфигурации приложения")
 	flag.StringVar(&cfg.ConfigJSON, "config", cfg.ConfigJSON, "JSON конфигурации приложения")
+	flag.BoolVar(&cfg.RunGRPC, "g", cfg.RunGRPC, "запустить gRPC сервер")
 
 	flag.Parse()
 }

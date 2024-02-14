@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/MWT-proger/shortener/configs"
+	"github.com/MWT-proger/shortener/internal/shortener/grpc"
 	"github.com/MWT-proger/shortener/internal/shortener/handlers"
 	"github.com/MWT-proger/shortener/internal/shortener/logger"
 	"github.com/MWT-proger/shortener/internal/shortener/server"
@@ -92,14 +93,28 @@ func run(ctx context.Context) error {
 
 	service := services.NewShortenerService(ctx, conf, storage)
 
-	apiHandler, err := handlers.NewAPIHandler(service)
+	if conf.RunGRPC {
 
-	if err != nil {
-		return err
-	}
+		gRPCServer, err := grpc.NewShortenerGRPCServer(service)
 
-	if err := server.Run(ctx, apiHandler, conf); err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		if err := gRPCServer.Run(ctx, conf); err != nil {
+			return err
+		}
+
+	} else {
+		apiHandler, err := handlers.NewAPIHandler(service)
+
+		if err != nil {
+			return err
+		}
+
+		if err := server.Run(ctx, apiHandler, conf); err != nil {
+			return err
+		}
 	}
 
 	return nil
