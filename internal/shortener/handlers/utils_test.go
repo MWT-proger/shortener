@@ -67,7 +67,7 @@ func TestUnmarshalBody_UnmarshalError(t *testing.T) {
 func TestSetHTTPError_ServiceError(t *testing.T) {
 	handler := &APIHandler{}
 	w := httptest.NewRecorder()
-	err := lErrors.NewServicesError("Service error", http.StatusBadRequest, false)
+	err := lErrors.NewServicesError("Service error", http.StatusBadRequest, false, 0)
 
 	handler.setHTTPError(w, err)
 
@@ -101,7 +101,7 @@ func TestSetHTTPError_InternalServerError(t *testing.T) {
 func TestSetOrGetHTTPCode_ServiceError_ReturnTrue(t *testing.T) {
 	handler := &APIHandler{}
 	w := httptest.NewRecorder()
-	err := lErrors.NewServicesError("Service error", http.StatusBadRequest, true)
+	err := lErrors.NewServicesError("Service error", http.StatusBadRequest, true, 0)
 	expectedCode := 0
 
 	code := handler.setOrGetHTTPCode(w, err)
