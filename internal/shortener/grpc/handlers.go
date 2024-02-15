@@ -5,12 +5,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/MWT-proger/shortener/internal/shortener/auth"
-	pb "github.com/MWT-proger/shortener/internal/shortener/grpc/proto"
-
-	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/MWT-proger/shortener/internal/shortener/auth"
+	lErrors "github.com/MWT-proger/shortener/internal/shortener/errors"
+	pb "github.com/MWT-proger/shortener/internal/shortener/grpc/proto"
 )
 
 // GenerateShortKey.

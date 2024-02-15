@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/MWT-proger/shortener/configs"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+
+	"github.com/MWT-proger/shortener/configs"
 )
 
 // RequestLoggerInterceptor — interceptor-логер для входящих HTTP-запросов.
