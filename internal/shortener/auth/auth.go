@@ -16,6 +16,7 @@ type claims struct {
 
 // nameCookie константа nameCookie - ключ в cookie для токена авторизации.
 const nameCookie = "token"
+const gRPCnameKey = "token"
 
 // buildJWTString(UserID uuid.UUID) (string, error) создаёт токен для пользователя с UserID
 // и возвращает его в виде строки в случае успеха

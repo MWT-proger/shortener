@@ -112,6 +112,22 @@ func (mr *MockShortenerServicerMockRecorder) GetListUserURLs(arg0, arg1, arg2 an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetListUserURLs", reflect.TypeOf((*MockShortenerServicer)(nil).GetListUserURLs), arg0, arg1, arg2)
 }
 
+// GetStats mocks base method.
+func (m *MockShortenerServicer) GetStats(arg0 context.Context) (int, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStats", arg0)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetStats indicates an expected call of GetStats.
+func (mr *MockShortenerServicerMockRecorder) GetStats(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStats", reflect.TypeOf((*MockShortenerServicer)(nil).GetStats), arg0)
+}
+
 // PingStorage mocks base method.
 func (m *MockShortenerServicer) PingStorage() bool {
 	m.ctrl.T.Helper()

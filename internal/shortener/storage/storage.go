@@ -17,6 +17,7 @@ type OperationStorager interface {
 	GetList(ctx context.Context, userID uuid.UUID) ([]*models.JSONShortURL, error)
 
 	DeleteList(ctx context.Context, data ...models.DeletedShortURL) error
+	CountUsersAndUrls(ctx context.Context) (urls int, users int, err error)
 
 	Close() error
 	Ping() error
