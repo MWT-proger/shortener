@@ -59,19 +59,11 @@ func (s *ShortenerGRPCServer) Run(ctx context.Context, conf configs.Config) erro
 		return err
 	}
 
-	gRPCServer := grpc.NewServer(grpc.UnaryInterceptor(unaryInterceptor))
+	gRPCServer := grpc.NewServer(grpc.ChainUnaryInterceptor(logger.RequestLoggerInterceptor, auth.RequestLoggerInterceptor(conf)))
 
 	pb.RegisterShortenerServer(gRPCServer, s)
 
 	logger.Log.Info("Running GRPC server on", logger.StringField("host", conf.HostServer))
 
 	return gRPCServer.Serve(listen)
-}
-
-func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-
-	UserID := uuid.New()
-	ctx = auth.WithUserID(ctx, UserID)
-
-	return handler(ctx, req)
 }
